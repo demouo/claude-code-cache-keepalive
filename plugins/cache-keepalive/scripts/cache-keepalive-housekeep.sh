@@ -92,7 +92,7 @@ while IFS= read -r f; do
   esac
   # never archive the current session's files
   [ -n "$safe" ] && case "$base" in
-    "last_stop.$safe"|"cache-keepalive.$safe.log"|"monitor.$safe.pid") continue ;;
+    "last_stop.$safe"|"last_ping.$safe"|"cache-keepalive.$safe.log"|"monitor.$safe.pid") continue ;;
   esac
 
   m="$(mtime_of "$f")"
@@ -107,6 +107,7 @@ while IFS= read -r f; do
   fi
 done < <(find "$STATE_DIR" -maxdepth 1 -type f \
            \( -name 'last_stop' -o -name 'last_stop.*' \
+              -o -name 'last_ping' -o -name 'last_ping.*' \
               -o -name 'cache-keepalive.log' -o -name 'cache-keepalive.*.log' \
               -o -name '*.count' \) 2>/dev/null)
 

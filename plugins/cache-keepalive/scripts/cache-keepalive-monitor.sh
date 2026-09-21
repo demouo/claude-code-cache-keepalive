@@ -3,28 +3,34 @@
 # cache-keepalive-monitor.sh  --  Monitor tool / plugin monitor
 # ============================================================
 # Long-running background loop. It measures how long THIS session has
-# been idle (now - last_stop) and, only once the idle window reaches
-# CCKA_IDLE_SECONDS, prints ONE line. Claude Code delivers each stdout
-# line to Claude as a notification, which starts a fresh turn -> a
-# cache read -> the prompt-cache TTL is refreshed.
+# been idle (now - last_stop, where last_stop is written by real activity
+# only) and, once the idle window reaches CCKA_IDLE_SECONDS, prints ONE
+# line. Claude Code delivers each stdout line to Claude as a notification,
+# which starts a fresh turn -> a cache read -> the prompt-cache TTL is
+# refreshed.
 #
-# Per-session: the heartbeat and log are keyed by the Claude Code
-# session id (CLAUDE_SESSION_ID, falling back to CLAUDE_CODE_SESSION_ID),
-# so concurrent sessions keep independent idle timers. If no session id
-# is visible in the environment it falls back to the shared global file
-# (any activity resets it, so it never spams).
+# Pinging stops once the session has been idle for CCKA_MAX_IDLE_SECONDS
+# (default 12h): by then the cache is long gone and pinging an abandoned
+# session just burns usage. Real activity (a new Stop / prompt) resets it.
+#
+# Per-session: the heartbeat, ping marker and log are keyed by the Claude
+# Code session id (CLAUDE_SESSION_ID, falling back to CLAUDE_CODE_SESSION_ID),
+# so concurrent sessions keep independent idle timers. If no session id is
+# visible in the environment it falls back to the shared global files.
 #
 # Config (env first, else ~/.claude/cache-keepalive/config, else default):
-#   CCKA_IDLE_SECONDS   idle time before pinging        (default 3000 = 50 min)
-#   CCKA_TICK_SECONDS   poll granularity                (default 300 = 5 min)
-#   CCKA_PING_TEXT      stdout line delivered to Claude (default bland ping)
-#   CCKA_STATE_DIR      state/log directory             (default ~/.claude/cache-keepalive)
-#   CCKA_LOG            explicit log path override
-#   CCKA_ENABLED        set 0/false/no/off to disable
+#   CCKA_IDLE_SECONDS       idle before pinging        (default 3000 = 50 min)
+#   CCKA_TICK_SECONDS       poll granularity           (default 300 = 5 min)
+#   CCKA_MAX_IDLE_SECONDS   stop pinging past this idle (default 43200 = 12h; 0 = never)
+#   CCKA_PING_TEXT          stdout line delivered to Claude
+#   CCKA_STATE_DIR          state/log directory        (default ~/.claude/cache-keepalive)
+#   CCKA_LOG                explicit log path override
+#   CCKA_ENABLED            set 0/false/no/off to disable
 #
-# With a 1h TTL and idle=50min, a 5min tick means the ping fires somewhere
-# in [50, 55] min after the last activity -- the extra tick of slack is
-# deliberately kept below 60min. Keep TICK small relative to (TTL - IDLE).
+# With a 1h TTL (Claude Pro/Max default) and idle=50min, a 5min tick means
+# the ping fires somewhere in [50, 55] min after the last activity -- the
+# extra tick of slack is deliberately kept below 60min. Keep TICK small
+# relative to (TTL - IDLE).
 # ============================================================
 set -uo pipefail
 
@@ -48,17 +54,25 @@ key="${CLAUDE_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-}}"
 safe="$(printf '%s' "$key" | tr -c 'A-Za-z0-9._-' '_')"
 if [ -n "$safe" ]; then
   HB="$STATE_DIR/last_stop.$safe"
+  PINGFILE="$STATE_DIR/last_ping.$safe"
   LOG="${CCKA_LOG:-$STATE_DIR/cache-keepalive.$safe.log}"
   SESSION_LABEL="$safe"
 else
   HB="$STATE_DIR/last_stop"
+  PINGFILE="$STATE_DIR/last_ping"
   LOG="${CCKA_LOG:-$STATE_DIR/cache-keepalive.log}"
   SESSION_LABEL="global"
 fi
 
 IDLE="${CCKA_IDLE_SECONDS:-3000}"
 TICK="${CCKA_TICK_SECONDS:-300}"
+MAX_IDLE="${CCKA_MAX_IDLE_SECONDS:-43200}"
 MESSAGE="${CCKA_PING_TEXT:-cache keepalive: this session has been idle; reply with a single word so the prompt cache stays warm.}"
+
+case "$IDLE"     in ''|*[!0-9]*) IDLE=3000 ;; esac
+case "$TICK"     in ''|*[!0-9]*) TICK=300 ;; esac
+case "$MAX_IDLE" in ''|*[!0-9]*) MAX_IDLE=43200 ;; esac
+[ "$TICK" -lt 1 ] && TICK=300
 
 # record our pid so a SessionEnd hook can stop us before the exit check
 PIDFILE="$STATE_DIR/monitor.$SESSION_LABEL.pid"
@@ -66,10 +80,6 @@ printf '%s' "$$" > "$PIDFILE" 2>/dev/null || true
 _cleanup() { rm -f "$PIDFILE" 2>/dev/null || true; }
 trap _cleanup EXIT
 trap '_cleanup; exit 0' INT TERM
-
-case "$IDLE" in ''|*[!0-9]*) IDLE=3000 ;; esac
-case "$TICK" in ''|*[!0-9]*) TICK=300 ;; esac
-[ "$TICK" -lt 1 ] && TICK=300
 
 log() { printf '[%s] [CACHE-KEEPALIVE-MONITOR] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG" 2>/dev/null || true; }
 
@@ -93,7 +103,7 @@ if [ $((_now - _last)) -ge "$IDLE" ]; then
   printf '%s' "$_now" > "$HB" 2>/dev/null || true
 fi
 
-log "monitor started (session=${SESSION_LABEL} idle=${IDLE}s tick=${TICK}s hb=$(basename "$HB"))"
+log "monitor started (session=${SESSION_LABEL} idle=${IDLE}s tick=${TICK}s max_idle=${MAX_IDLE}s hb=$(basename "$HB"))"
 
 # opportunistic housekeeping (throttled inside); stdout is redirected so it
 # can never leak into the monitor's notification stream
@@ -102,6 +112,7 @@ if [ -f "$HK" ]; then
   ( bash "$HK" >/dev/null 2>&1 & ) 2>/dev/null || true
 fi
 
+capped=0
 while :; do
   # background sleep + wait: `wait` is interrupted immediately by trap
   # signals, so the SessionEnd cleanup can stop us promptly (a foreground
@@ -112,12 +123,25 @@ while :; do
   now="$(date +%s)"
   last="$(cat "$HB" 2>/dev/null || echo "$now")"
   case "$last" in ''|*[!0-9]*) last="$now" ;; esac
+  since_ping_last="$(cat "$PINGFILE" 2>/dev/null || echo 0)"
+  case "$since_ping_last" in ''|*[!0-9]*) since_ping_last=0 ;; esac
 
-  if [ $((now - last)) -ge "$IDLE" ]; then
-    log "idle $(( (now - last) / 60 ))m >= $(( IDLE / 60 ))m -> emitting keepalive"
-    printf '%s\n' "$MESSAGE"
-    # avoid spamming if the notification never produces a Stop;
-    # a real Stop/UserPromptSubmit will re-stamp anyway
-    date +%s > "$HB" 2>/dev/null || true
+  idle=$((now - last))
+  since_ping=$((now - since_ping_last))
+
+  # ping only when idle enough AND we have not pinged in the last window
+  # (the second condition is a guard for when a ping produced no Stop)
+  if [ "$idle" -ge "$IDLE" ] && [ "$since_ping" -ge "$IDLE" ]; then
+    if [ "$MAX_IDLE" -gt 0 ] && [ "$idle" -ge "$MAX_IDLE" ]; then
+      if [ "$capped" = 0 ]; then
+        log "idle $((idle / 3600))h exceeds max_idle; pausing pings until activity resumes"
+        capped=1
+      fi
+    else
+      capped=0
+      log "idle $((idle / 60))m >= $((IDLE / 60))m -> emitting keepalive"
+      printf '%s\n' "$MESSAGE"
+      printf '%s' "$now" > "$PINGFILE" 2>/dev/null || true
+    fi
   fi
 done

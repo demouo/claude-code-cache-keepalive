@@ -21,15 +21,21 @@ Built for a **1 hour** cache TTL. On a 5-minute TTL you would set
 
 ## Who this is for
 
-✅ **For:** Claude Code on the **official Anthropic API**, billed **per
-token**, with real idle gaps (you think, step away, come back). Every cache
-mismatch after a gap re-writes the whole prefix at 1.25–2×; this pings it back
-to a ~0.1× cache **read** instead.
+✅ **For: Claude Code on official Anthropic** — both a **Claude Pro/Max
+subscription** and a **Console API key**. On a subscription the main
+conversation gets a **1-hour** prompt-cache TTL (within your plan's included
+usage); leave a session idle longer than that and your next message
+re-processes the whole prefix — slower, and far more usage than a cache read.
+This keeps the prefix warm so you come back to a cheap cache **read**. The
+defaults (50 min) are tuned for that 1-hour TTL.
 
-❌ **Not for:** Pro/Max or any request-quota subscription — pings eat quota and
-save nothing. Third-party Anthropic-compatible gateways (DeepSeek, GLM, …) —
-the Monitor tool is first-party only, so the monitor is skipped. Providers with
-automatic, long-lived caching don't need it at all.
+On an **API key** the default TTL is 5 minutes, so lower the numbers or set a
+1-hour TTL yourself — see [Timing rule](#timing-rule).
+
+❌ **Not for:** third-party Anthropic-compatible gateways (DeepSeek, GLM,
+OpenRouter, …) and Bedrock / Vertex / Foundry — the **Monitor tool is
+first-party only**, so the monitor is skipped there, and their cache semantics
+differ anyway.
 
 ---
 
@@ -108,8 +114,9 @@ tar -tzf ~/.claude/cache-keepalive/archive/cache-keepalive-2026-09-21.tar.gz
 
 Anthropic prices a **cache read** at ~0.1× base input, a **5-minute cache
 write** at ~1.25×, and a **1-hour cache write** at ~2×. When an idle gap lets
-the cache expire, the next turn re-writes the whole prefix at 1.25–2× instead
-of reading it at 0.1×.
+the cache expire, the next turn re-processes the whole prefix at 1.25–2×
+instead of reading it at 0.1×. On an API key that is a direct bill; on a
+Pro/Max subscription it is what drains your plan usage faster.
 
 At a 20K-token cached prefix (Sonnet-class, per million tokens):
 
@@ -173,6 +180,7 @@ visible to monitors, so use the config file or environment.)
 | --- | --- | --- |
 | `CCKA_IDLE_SECONDS` | `3000` | Idle time before pinging (50 min) |
 | `CCKA_TICK_SECONDS` | `300` | Poll granularity (5 min) |
+| `CCKA_MAX_IDLE_SECONDS` | `43200` | Stop pinging once idle exceeds this (12 h; `0` = never) |
 | `CCKA_PING_TEXT` | bland text | The line delivered to Claude |
 | `CCKA_STATE_DIR` | `~/.claude/cache-keepalive` | State + log directory |
 | `CCKA_LOG` | `$CCKA_STATE_DIR/cache-keepalive.<session>.log` | Explicit log path override |
@@ -190,10 +198,10 @@ worst-case ping time = IDLE_SECONDS + (TICK_SECONDS - 1)
 
 Keep that **below the cache TTL**:
 
-| TTL | `CCKA_IDLE_SECONDS` | `CCKA_TICK_SECONDS` | worst case |
-| --- | --- | --- | --- |
-| 1 h (3600 s) | 3000 (50 min) | 300 (5 min) | **55 min** ✅ |
-| 5 min (300 s) | 240 | 15 | 254 s ✅ |
+| TTL | where | `CCKA_IDLE_SECONDS` | `CCKA_TICK_SECONDS` | worst case |
+| --- | --- | --- | --- | --- |
+| 1 h (3600 s) | Claude Pro/Max within plan, or `CLAUDE_CODE_PROMPT_CACHE_TTL=1h` | 3000 (50 min) | 300 (5 min) | **55 min** ✅ |
+| 5 min (300 s) | API key default | 240 | 15 | 254 s ✅ |
 
 A 5-minute tick is fine for a 1 h TTL, but **not** for a 5-minute TTL —
 lower the tick if you lower the TTL.
@@ -239,8 +247,11 @@ claude plugin uninstall cache-keepalive
    `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` is set, nor on Amazon Bedrock,
    Google Cloud's Agent Platform, or Microsoft Foundry. Plugin monitors run
    only in **interactive CLI** sessions.
-2. **Billing.** API/token billing only; disable on request-quota
-   subscriptions.
+2. **Usage.** Works on both a Pro/Max subscription and API billing. On a
+   subscription the point is to avoid a full prefix re-processing (which drains
+   plan usage) after an idle gap longer than the 1-hour TTL, not to cut a
+   per-token bill. Pinging stops after `CCKA_MAX_IDLE_SECONDS` (default 12 h)
+   so an abandoned session does not keep pinging.
 3. **Multi-session.** Each session runs its own monitor and heartbeat
    (`last_stop.<session_id>`), so timers are independent. The only shared
    case is a monitor that cannot see `CLAUDE_SESSION_ID`, which falls back

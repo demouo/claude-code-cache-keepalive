@@ -3,6 +3,21 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.5.0] — idle cap + correct subscription positioning
+
+### Added
+- `CCKA_MAX_IDLE_SECONDS` (default 43200 = 12 h): the monitor stops pinging
+  once a session has been idle that long, so an abandoned session no longer
+  pings every idle window and burns usage. Real activity resumes pinging.
+- A separate `last_ping.<session>` marker distinguishes "last real activity"
+  from "last ping", so the cap is measured from genuine activity.
+
+### Changed
+- Docs: corrected positioning. Claude Pro/Max subscriptions get a **1-hour**
+  prompt-cache TTL for the main conversation (within plan usage), so the
+  defaults are aimed at subscribers; API keys default to a 5-minute TTL. The
+  plugin is for **official Anthropic only** (Monitor is first-party).
+
 ## [2.4.0] — housekeeping
 
 ### Added

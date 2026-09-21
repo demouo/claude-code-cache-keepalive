@@ -14,15 +14,17 @@
 
 ## 适合谁 / 不适合谁
 
-✅ **适合**：官方 Anthropic API、**按 token 计费**、且确实会有较长的思考/离开间隔
-的场景。缓存过期后下一回合会以 1.25–2× 的价格重写整个前缀；这个插件把它拉回
-约 0.1× 的缓存**读**。
+✅ **适合：官方 Anthropic 上的 Claude Code** —— **Pro/Max 订阅**和 **Console API key**
+都行。订阅制下主对话默认是 **1 小时** 的 prompt cache TTL（在套餐额度内）；一旦你离开
+超过 1 小时，下一条消息就要重新处理整个前缀——更慢，而且比一次缓存读多消耗得多。
+这个插件把前缀保持温热，让你回来时走一次便宜的缓存**读**。默认配置（50 分钟）就是
+照 1 小时 TTL 调的。
 
-❌ **不适合**：
-- Pro/Max 等**按请求配额**的订阅 —— 每次 ping 都在吃你的额度，省不到钱；
-- DeepSeek / GLM 这类**第三方 Anthropic 兼容网关** —— Monitor 工具是官方专属，
-  monitor 根本不会启动；
-- 自带自动、长时间缓存的 provider（如 DeepSeek）—— 本来就不需要。
+API key 默认只有 **5 分钟** TTL，那就要把参数调小，或自己设 1 小时 TTL——见“时序约束”。
+
+❌ **不适合**：DeepSeek / GLM / OpenRouter 等**第三方 Anthropic 兼容网关**，以及
+Bedrock / Vertex / Foundry——**Monitor 工具是官方专属**，那里 monitor 根本不会启动，
+而且它们的缓存语义也不同。
 
 ## 原理
 
@@ -94,6 +96,7 @@ Monitor 读取顺序：**环境变量 → `~/.claude/cache-keepalive/config` →
 |---|---|---|
 | `CCKA_IDLE_SECONDS` | `3000` | 空闲多久才 ping（50 分钟） |
 | `CCKA_TICK_SECONDS` | `300` | 检查粒度（5 分钟） |
+| `CCKA_MAX_IDLE_SECONDS` | `43200` | 空闲超过这么久就停止 ping（12 小时；0 = 不限） |
 | `CCKA_PING_TEXT` | 一句 bland 文本 | 注入给 Claude 的内容 |
 | `CCKA_ENABLED` | `1` | `0`/`false`/`no`/`off` 关闭 |
 | `CCKA_RETENTION_DAYS` | `7` | 超过多久的会话状态进入归档 |
@@ -135,6 +138,8 @@ claude plugin uninstall cache-keepalive
    *Exit anyway*，回车即可。
 5. 每会话独立计时；隔很久 resume 时会把过期心跳重置为"现在"，不会一进来就 ping。
 6. 状态文件会在会话启动时按日期归档到 `archive/cache-keepalive-<日期>.tar.gz`。
+7. 空闲超过 `CCKA_MAX_IDLE_SECONDS`（默认 12 小时）后会**停止 ping**，避免被晾着的
+   会话白烧用量；一旦有新活动（新消息 / Stop）就自动恢复。
 
 ## 相关项目
 

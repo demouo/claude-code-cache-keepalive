@@ -126,5 +126,17 @@ arch="$HK/archive/cache-keepalive-2020-01-01.tar.gz"
 check "$( [ -f "$arch" ] && echo yes || echo no )" "yes" "dated archive created"
 check "$(tar -tzf "$arch" 2>/dev/null | grep -c -E 'last_stop.OLD|cache-keepalive.OLD.log')" "2" "archive contains the old files"
 
+echo "-- max idle cap: pinging stops on an abandoned session --"
+: > "$TMP/out.CAP"
+CLAUDE_SESSION_ID=CAP CCKA_IDLE_SECONDS=1 CCKA_TICK_SECONDS=1 CCKA_MAX_IDLE_SECONDS=3 CCKA_PING_TEXT=PING_CAP bash "$MONITOR" >"$TMP/out.CAP" 2>/dev/null &
+PIDS+=($!)
+sleep 8
+n="$(wc -l < "$TMP/out.CAP" | tr -d ' ')"
+check "$( [ "$n" -ge 1 ] && [ "$n" -le 3 ] && echo yes || echo no )" "yes" "pings stop after max idle ($n pings, not ~8)"
+stamp CAP
+sleep 3
+m="$(wc -l < "$TMP/out.CAP" | tr -d ' ')"
+check "$( [ "$m" -gt "$n" ] && echo yes || echo no )" "yes" "new activity resumes pinging"
+
 printf '\npassed: %d   failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
