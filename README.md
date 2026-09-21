@@ -19,6 +19,23 @@ full cache rewrite.
 Built for a **1 hour** cache TTL. On a 5-minute TTL you would set
 `CCKA_IDLE_SECONDS=240`.
 
+## Cost at a glance
+
+10 warm pings (cache **reads**) vs. one cold start (a 1-hour cache **rewrite**), USD:
+
+| Model | 100K ctx | 1M ctx | Savings |
+| --- | ---: | ---: | ---: |
+| Opus 5 / 4.8 / 4.7 / 4.6 | $0.50 → $1.00 | $5.00 → $10.00 | **2×** |
+| Sonnet 5 | $0.20 → $0.40 | $2.00 → $4.00 | **2×** |
+| Sonnet 4.6 / 4.5 | $0.30 → $0.60 | $3.00 → $6.00 | **2×** |
+| Haiku 4.5 | $0.10 → $0.20 | $1.00 → $2.00 | **2×** |
+| Fable 5.1 | $0.25 → $2.00 | $2.50 → $20.00 | **8×** |
+
+`warm ×10 → cold ×1`. 10 pings ≈ **8 hours** of warmth; pinging stops after
+12 h idle, which keeps it under the **20-ping** break-even for a 1-hour rewrite.
+Full table (20K–1M, all models, break-even) and the generator:
+**[docs/COST.md](docs/COST.md)**.
+
 ## Who this is for
 
 ✅ **For: Claude Code on official Anthropic** — both a **Claude Pro/Max
