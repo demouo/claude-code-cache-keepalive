@@ -8,7 +8,7 @@
     {
       "name": "cache-keepalive",
       "source": "./plugins/cache-keepalive",
-      "description": "Keep Claude Code's prompt cache warm across idle pauses. Uses a Stop hook to inject cheap keepalive turns before the TTL expires; cache reads cost far less than cache writes. API/token billing only; disable on request-quota subscriptions."
+      "description": "Keep Claude Code's prompt cache warm across idle pauses. A Stop hook stamps activity and a background Monitor pings the session only after it has been idle long enough (default 50 min) to threaten the TTL, refreshing the cache with one cheap read. Built for a 1h TTL; disable on request-quota subscriptions."
     }
   ]
 }

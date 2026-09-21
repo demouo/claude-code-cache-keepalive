@@ -1,7 +1,7 @@
 {
   "name": "cache-keepalive",
-  "version": "1.0.0",
-  "description": "Keep Claude Code's prompt cache warm across idle pauses by injecting cheap keepalive turns from a Stop hook. Saves money on API-billed sessions with normal thinking gaps; disable it on request-quota subscriptions.",
+  "version": "2.0.0",
+  "description": "Keep Claude Code's prompt cache warm across idle pauses. A Stop/UserPromptSubmit hook stamps activity; a background Monitor pings the session only once it has been idle long enough (default 50 min), which triggers a cache read and refreshes the prompt-cache TTL. Built for a 1h cache TTL; on request-quota subscriptions every ping eats quota, so disable it there.",
   "author": {
     "name": "demouo"
   },
@@ -14,36 +14,7 @@
     "keepalive",
     "ttl",
     "cost-optimization",
-    "hooks"
-  ],
-  "userConfig": {
-    "interval_seconds": {
-      "type": "number",
-      "title": "Keepalive interval (seconds)",
-      "description": "Seconds the Stop hook sleeps before injecting a keepalive ping. The cache TTL is 300s (5 min); 240 leaves a 60s safety margin.",
-      "default": 240,
-      "min": 30,
-      "max": 290,
-      "required": false,
-      "sensitive": false
-    },
-    "keepalive_message": {
-      "type": "string",
-      "title": "Keepalive message",
-      "description": "Text injected as a user-side keepalive turn. Keep it bland so Claude replies cheaply without starting tools or long output.",
-      "default": "got it, i need some time to think about the next move",
-      "required": false,
-      "sensitive": false
-    },
-    "max_loops_per_turn": {
-      "type": "number",
-      "title": "Max keepalive loops per turn",
-      "description": "Max consecutive keepalive cycles per idle turn before giving up. interval=240 and max=15 keeps the cache warm for ~60 minutes.",
-      "default": 15,
-      "min": 1,
-      "max": 60,
-      "required": false,
-      "sensitive": false
-    }
-  }
+    "hooks",
+    "monitor"
+  ]
 }

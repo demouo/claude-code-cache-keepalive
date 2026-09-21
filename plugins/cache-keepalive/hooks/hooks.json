@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/cache-keepalive-stop.sh\"",
-            "timeout": 300
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/cache-keepalive-stamp.sh\"",
+            "timeout": 10
           }
         ]
       }
@@ -18,19 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/cache-keepalive-reset.sh\"",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/cache-keepalive-reset.sh\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/cache-keepalive-stamp.sh\"",
             "timeout": 10
           }
         ]

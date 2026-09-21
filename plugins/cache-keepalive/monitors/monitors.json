@@ -1,0 +1,8 @@
+[
+  {
+    "name": "cache-keepalive-idle",
+    "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/cache-keepalive-monitor.sh\"",
+    "description": "Ping the session once it has been idle long enough to threaten the prompt-cache TTL",
+    "when": "always"
+  }
+]

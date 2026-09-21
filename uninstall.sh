@@ -86,7 +86,10 @@ if [ -f "$SETTINGS" ]; then
 fi
 remove_json
 
-rm -f "$HOOKS_DIR/cache-keepalive-stop.sh" "$HOOKS_DIR/cache-keepalive-reset.sh"
+rm -f "$HOOKS_DIR/cache-keepalive-stamp.sh" \
+      "$HOOKS_DIR/cache-keepalive-monitor.sh" \
+      "$HOOKS_DIR/cache-keepalive-stop.sh" \
+      "$HOOKS_DIR/cache-keepalive-reset.sh"
 echo "  removed hook scripts"
 
 if [ "$PURGE" = "1" ]; then
