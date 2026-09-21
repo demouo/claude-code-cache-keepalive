@@ -1,5 +1,10 @@
 # Cost math: 10 warm pings vs. one cold start
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="cost-chart-dark.svg">
+  <img alt="Bar chart: 10 warm pings vs one cold start at 1M-token context." src="cost-chart-light.svg" width="860">
+</picture>
+
 This compares what the keepalive **costs** (10 pings, each a cache **read** of the
 prompt prefix) against what one **cold start** costs (one cache **write** that
 re-processes the whole prefix after the cache expired).

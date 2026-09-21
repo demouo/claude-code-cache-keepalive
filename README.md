@@ -21,6 +21,11 @@ Built for a **1 hour** cache TTL. On a 5-minute TTL you would set
 
 ## Cost at a glance
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/cost-chart-dark.svg">
+  <img alt="Bar chart: 10 warm pings vs one cold start at 1M-token context. Opus 5: $5 vs $10. Sonnet 5: $2 vs $4. Sonnet 4.6: $3 vs $6. Haiku 4.5: $1 vs $2. Fable 5.1: $2.50 vs $20. Savings 2x, and 8x for Fable 5.1." src="docs/cost-chart-light.svg" width="860">
+</picture>
+
 10 warm pings (cache **reads**) vs. one cold start (a 1-hour cache **rewrite**), USD:
 
 | Model | 100K ctx | 1M ctx | Savings |

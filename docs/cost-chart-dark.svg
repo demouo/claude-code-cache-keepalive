@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="452" viewBox="0 0 960 452" role="img" aria-label="10 warm pings vs one cold start at 1M context">
+<rect width="960" height="452" rx="12" fill="#0d1117"/>
+<text x="24" y="40" fill="#e6edf3" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="20" font-weight="700">10 warm pings vs. one cold start</text>
+<text x="24" y="64" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="13">Claude prompt cache · 1M-token context · USD · warm = 10 cache reads, cold = one 1-hour cache rewrite</text>
+<rect x="24" y="75" width="12" height="12" rx="2" fill="#3fb950"/>
+<text x="42" y="85" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">warm ×10</text>
+<rect x="174" y="75" width="12" height="12" rx="2" fill="#f85149"/>
+<text x="192" y="85" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">cold ×1</text>
+<line x1="250.0" y1="96" x2="250.0" y2="396" stroke="#30363d" stroke-width="1"/>
+<text x="250.0" y="412" fill="#9198a1" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">$0.00</text>
+<line x1="362.5" y1="96" x2="362.5" y2="396" stroke="#30363d" stroke-width="1"/>
+<text x="362.5" y="412" fill="#9198a1" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">$5.00</text>
+<line x1="475.0" y1="96" x2="475.0" y2="396" stroke="#30363d" stroke-width="1"/>
+<text x="475.0" y="412" fill="#9198a1" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">$10.00</text>
+<line x1="587.5" y1="96" x2="587.5" y2="396" stroke="#30363d" stroke-width="1"/>
+<text x="587.5" y="412" fill="#9198a1" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">$15.00</text>
+<line x1="700.0" y1="96" x2="700.0" y2="396" stroke="#30363d" stroke-width="1"/>
+<text x="700.0" y="412" fill="#9198a1" text-anchor="middle" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">$20.00</text>
+<text x="24" y="126" fill="#e6edf3" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="600">Opus 5</text>
+<rect x="250" y="104" width="112.5" height="20" rx="4" fill="#3fb950"/>
+<text x="370.5" y="119" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$5.00</text>
+<rect x="250" y="131" width="225.0" height="20" rx="4" fill="#f85149"/>
+<text x="483.0" y="146" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$10.00</text>
+<text x="812" y="126" fill="#3fb950" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="700">2×</text>
+<text x="812" y="142" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">cheaper</text>
+<text x="24" y="188" fill="#e6edf3" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="600">Sonnet 5</text>
+<rect x="250" y="166" width="45.0" height="20" rx="4" fill="#3fb950"/>
+<text x="303.0" y="181" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$2.00</text>
+<rect x="250" y="193" width="90.0" height="20" rx="4" fill="#f85149"/>
+<text x="348.0" y="208" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$4.00</text>
+<text x="812" y="188" fill="#3fb950" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="700">2×</text>
+<text x="812" y="204" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">cheaper</text>
+<text x="24" y="250" fill="#e6edf3" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="600">Sonnet 4.6</text>
+<rect x="250" y="228" width="67.5" height="20" rx="4" fill="#3fb950"/>
+<text x="325.5" y="243" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$3.00</text>
+<rect x="250" y="255" width="135.0" height="20" rx="4" fill="#f85149"/>
+<text x="393.0" y="270" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$6.00</text>
+<text x="812" y="250" fill="#3fb950" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="700">2×</text>
+<text x="812" y="266" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">cheaper</text>
+<text x="24" y="312" fill="#e6edf3" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="600">Haiku 4.5</text>
+<rect x="250" y="290" width="22.5" height="20" rx="4" fill="#3fb950"/>
+<text x="280.5" y="305" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$1.00</text>
+<rect x="250" y="317" width="45.0" height="20" rx="4" fill="#f85149"/>
+<text x="303.0" y="332" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$2.00</text>
+<text x="812" y="312" fill="#3fb950" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="700">2×</text>
+<text x="812" y="328" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">cheaper</text>
+<text x="24" y="374" fill="#e6edf3" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="13" font-weight="600">Fable 5.1</text>
+<rect x="250" y="352" width="56.2" height="20" rx="4" fill="#3fb950"/>
+<text x="314.2" y="367" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$2.50</text>
+<rect x="250" y="379" width="450.0" height="20" rx="4" fill="#f85149"/>
+<text x="708.0" y="394" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12">$20.00</text>
+<text x="812" y="374" fill="#3fb950" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="15" font-weight="700">8×</text>
+<text x="812" y="390" fill="#9198a1" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="11">cheaper</text>
+</svg>
