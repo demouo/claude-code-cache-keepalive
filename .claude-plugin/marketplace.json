@@ -1,0 +1,14 @@
+{
+  "name": "claude-cache-tools",
+  "owner": {
+    "name": "you"
+  },
+  "description": "Tools for managing Claude Code's prompt cache and TTL",
+  "plugins": [
+    {
+      "name": "cache-keepalive",
+      "source": "./plugins/cache-keepalive",
+      "description": "Keep Claude Code's prompt cache warm across idle pauses. Uses a Stop hook to inject cheap keepalive turns before the TTL expires; cache reads cost far less than cache writes. API/token billing only; disable on request-quota subscriptions."
+    }
+  ]
+}
