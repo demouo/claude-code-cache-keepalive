@@ -95,6 +95,13 @@ fi
 
 log "monitor started (session=${SESSION_LABEL} idle=${IDLE}s tick=${TICK}s hb=$(basename "$HB"))"
 
+# opportunistic housekeeping (throttled inside); stdout is redirected so it
+# can never leak into the monitor's notification stream
+HK="$(dirname "$0")/cache-keepalive-housekeep.sh"
+if [ -f "$HK" ]; then
+  ( bash "$HK" >/dev/null 2>&1 & ) 2>/dev/null || true
+fi
+
 while :; do
   # background sleep + wait: `wait` is interrupted immediately by trap
   # signals, so the SessionEnd cleanup can stop us promptly (a foreground

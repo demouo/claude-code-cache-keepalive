@@ -57,6 +57,27 @@ Stale `monitor.<session>.pid` files are harmless: the `SessionEnd` cleanup
 only kills a pid whose command line actually matches the monitor, so a
 reused pid is left alone.
 
+### Housekeeping
+
+Per-session state would otherwise accumulate forever. At session start (at
+most once per `CCKA_HOUSEKEEP_INTERVAL`), the monitor runs a housekeeping
+pass that:
+
+* deletes `monitor.<session>.pid` files whose process is gone;
+* bundles `last_stop.<session>` / `cache-keepalive.<session>.log` older than
+  `CCKA_RETENTION_DAYS` (default 7) into
+  `archive/cache-keepalive-<date>.tar.gz`, bucketed by the file's
+  last-modified **date**, then removes the originals;
+* optionally prunes archives older than `CCKA_ARCHIVE_KEEP_DAYS`.
+
+The current session's files, `config`, and the housekeeping logs are never
+touched. Archives are ordinary tarballs:
+
+```bash
+ls  ~/.claude/cache-keepalive/archive/
+tar -tzf ~/.claude/cache-keepalive/archive/cache-keepalive-2026-09-21.tar.gz
+```
+
 ### Why a Monitor and not a sleeping Stop hook
 
 | | Stop hook that sleeps | **Monitor** (this repo) |
@@ -121,6 +142,10 @@ visible to monitors, so use the config file or environment.)
 | `CCKA_STATE_DIR` | `~/.claude/cache-keepalive` | State + log directory |
 | `CCKA_LOG` | `$CCKA_STATE_DIR/cache-keepalive.<session>.log` | Explicit log path override |
 | `CCKA_ENABLED` | `1` | `0` / `false` / `no` / `off` disables the monitor |
+| `CCKA_RETENTION_DAYS` | `7` | Age before per-session state is archived |
+| `CCKA_ARCHIVE_KEEP_DAYS` | `0` | Prune archives older than this (`0` = keep forever) |
+| `CCKA_ARCHIVE_DIR` | `$CCKA_STATE_DIR/archive` | Where dated archives go |
+| `CCKA_HOUSEKEEP_INTERVAL` | `21600` | Min seconds between housekeeping runs (`0` = every start) |
 
 ### Timing rule
 
@@ -213,7 +238,8 @@ claude plugin uninstall cache-keepalive
 │   └── scripts/
 │       ├── cache-keepalive-stamp.sh                      # record last_stop
 │       ├── cache-keepalive-monitor.sh                    # idle timer -> ping
-│       └── cache-keepalive-cleanup.sh                    # SessionEnd: stop the monitor
+│       ├── cache-keepalive-cleanup.sh                    # SessionEnd: stop the monitor
+│       └── cache-keepalive-housekeep.sh                  # archive stale state
 ├── install.sh / uninstall.sh / test.sh
 └── README.md
 ```

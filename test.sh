@@ -11,6 +11,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-stamp.sh"
 MONITOR="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-monitor.sh"
 CLEANUP="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-cleanup.sh"
+HOUSEKEEP="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-housekeep.sh"
 
 TMP="$(mktemp -d)"
 PIDS=()
@@ -104,6 +105,26 @@ printf '%s' '{"session_id":"Z"}' | CLAUDE_SESSION_ID=Z bash "$CLEANUP"
 check "$(kill -0 "$DUMMY" 2>/dev/null && echo alive || echo dead)" "alive" "non-matching pid is left alone"
 check "$( [ -f "$TMP/monitor.Z.pid" ] && echo yes || echo no )" "no" "stale pid file removed"
 kill "$DUMMY" 2>/dev/null || true
+
+echo "-- housekeeping: archive stale state by date, drop dead pid files --"
+HK="$TMP/hk"; mkdir -p "$HK"
+printf 'x' > "$HK/last_stop.OLD"
+printf 'x' > "$HK/cache-keepalive.OLD.log"
+printf 'x' > "$HK/last_stop.NEW"
+printf 'x' > "$HK/last_stop.CUR"
+printf 'cfg' > "$HK/config"
+printf '999999' > "$HK/monitor.DEAD.pid"        # dead pid
+touch -t 202001010000 "$HK/last_stop.OLD" "$HK/cache-keepalive.OLD.log" "$HK/last_stop.CUR"
+CLAUDE_SESSION_ID=CUR CCKA_STATE_DIR="$HK" CCKA_RETENTION_DAYS=7 CCKA_HOUSEKEEP_INTERVAL=0 bash "$HOUSEKEEP"
+check "$( [ -f "$HK/last_stop.OLD" ] && echo yes || echo no )" "no" "old heartbeat archived away"
+check "$( [ -f "$HK/cache-keepalive.OLD.log" ] && echo yes || echo no )" "no" "old log archived away"
+check "$( [ -f "$HK/last_stop.NEW" ] && echo yes || echo no )" "yes" "recent file kept"
+check "$( [ -f "$HK/last_stop.CUR" ] && echo yes || echo no )" "yes" "current session's file kept"
+check "$( [ -f "$HK/config" ] && echo yes || echo no )" "yes" "config kept"
+check "$( [ -f "$HK/monitor.DEAD.pid" ] && echo yes || echo no )" "no" "dead pid file removed"
+arch="$HK/archive/cache-keepalive-2020-01-01.tar.gz"
+check "$( [ -f "$arch" ] && echo yes || echo no )" "yes" "dated archive created"
+check "$(tar -tzf "$arch" 2>/dev/null | grep -c -E 'last_stop.OLD|cache-keepalive.OLD.log')" "2" "archive contains the old files"
 
 printf '\npassed: %d   failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
