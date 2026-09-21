@@ -1,5 +1,7 @@
 # claude-code-cache-keepalive
 
+**English** · [简体中文](README.zh-CN.md)
+
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
 <a href="test.sh"><img alt="tests: 29 passing" src="https://img.shields.io/badge/tests-29%20passing-brightgreen"></a>

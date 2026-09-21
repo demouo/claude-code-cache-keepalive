@@ -2,6 +2,13 @@
 
 [English](README.md) · **简体中文**
 
+<p>
+<a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+<a href="test.sh"><img alt="tests: 29 passing" src="https://img.shields.io/badge/tests-29%20passing-brightgreen"></a>
+<img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
+<img alt="requires Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
+</p>
+
 **让 Claude Code 的 prompt cache 在闲置期间保持温热 —— 而且不冻结你的终端。**
 
 一个 `Stop` hook 只做一件事：把"这个会话刚刚活跃过"的时间戳写下来。
@@ -11,6 +18,27 @@
 
 面向 **1 小时** 缓存 TTL 设计；如果你用的是 5 分钟 TTL，把
 `CCKA_IDLE_SECONDS` 设为 `240`。
+
+## 省钱一览
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/cost-chart-dark.svg">
+  <img alt="柱状图：1M 上下文下 warm 10 次 vs cold start 1 次。Opus 5 $5/$10、Sonnet 5 $2/$4、Sonnet 4.6 $3/$6、Haiku 4.5 $1/$2、Fable 5.1 $2.50/$20，节约 2×（Fable 5.1 为 8×）" src="docs/cost-chart-light.svg" width="860">
+</picture>
+
+warm ×10（缓存**读**）vs. cold start ×1（1 小时缓存**重写**），USD：
+
+| 模型 | 100K 上下文 | 1M 上下文 | 节约倍数 |
+| --- | ---: | ---: | ---: |
+| Opus 5 / 4.8 / 4.7 / 4.6 | $0.50 → $1.00 | $5.00 → $10.00 | **2×** |
+| Sonnet 5 | $0.20 → $0.40 | $2.00 → $4.00 | **2×** |
+| Sonnet 4.6 / 4.5 | $0.30 → $0.60 | $3.00 → $6.00 | **2×** |
+| Haiku 4.5 | $0.10 → $0.20 | $1.00 → $2.00 | **2×** |
+| Fable 5.1 | $0.25 → $2.00 | $2.50 → $20.00 | **8×** |
+
+`warm ×10 → cold ×1`。10 次 ping ≈ **8 小时**温热；空闲 12 小时后停止 ping，正好压在
+1 小时重写的 **20 次**回本线内。完整表格（20K–1M、全部模型、回本线）与生成脚本：
+**[docs/COST.md](docs/COST.md)**（英文）。
 
 ## 适合谁 / 不适合谁
 
@@ -108,7 +136,7 @@ Monitor 读取顺序：**环境变量 → `~/.claude/cache-keepalive/config` →
 ## 验证
 
 ```bash
-./test.sh        # 27 项自检，不需要 Claude Code
+./test.sh        # 29 项自检，不需要 Claude Code
 ```
 
 运行时日志（按会话分开）：
@@ -131,7 +159,8 @@ claude plugin uninstall cache-keepalive
 1. **需要 Monitor 工具**：较新版 Claude Code，且不能设置
    `DISABLE_TELEMETRY` / `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`，也不支持
    Bedrock / Vertex / Foundry。插件 monitor 仅在**交互式 CLI** 会话运行。
-2. **仅按量计费**；订阅制请关闭。
+2. **用量**：订阅和 API 都适用。订阅制下它的意义是避免“空闲超过 1 小时 TTL 后再
+   重新处理整段前缀”——那会更慢、也更吃套餐额度；ping 本身只花一次缓存读。
 3. **ping 是一个真实回合**，会进 transcript、消耗一次缓存读 + 一句回复。
 4. **退出时会弹确认**："Background work is running … Exit anyway?"（上游
    issue #58852，已 closed as not planned，插件侧无法关闭）。默认就停在
