@@ -1,5 +1,7 @@
 # Cost math: 10 warm pings vs. one cold start
 
+**English** · [简体中文](COST.zh-CN.md)
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="cost-chart-dark.svg">
   <img alt="Bar chart: 10 warm pings vs one cold start at 1M-token context." src="cost-chart-light.svg" width="860">
