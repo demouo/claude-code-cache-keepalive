@@ -2,7 +2,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 27 passing" src="https://img.shields.io/badge/tests-27%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 29 passing" src="https://img.shields.io/badge/tests-29%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="Requires the Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 </p>
