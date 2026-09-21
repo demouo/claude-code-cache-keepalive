@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Keep Claude Code's prompt cache warm across idle pauses by injecting cheap keepalive turns from a Stop hook. Saves money on API-billed sessions with normal thinking gaps; disable it on request-quota subscriptions.",
   "author": {
-    "name": "you"
+    "name": "demouo"
   },
-  "homepage": "https://github.com/you/claude-code-cache-keepalive",
-  "repository": "https://github.com/you/claude-code-cache-keepalive",
+  "homepage": "https://github.com/demouo/claude-code-cache-keepalive",
+  "repository": "https://github.com/demouo/claude-code-cache-keepalive",
   "license": "MIT",
   "keywords": [
     "cache",

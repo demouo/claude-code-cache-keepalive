@@ -49,7 +49,7 @@ At `interval=240`, `max_loops=15` one idle turn keeps the cache warm for
 ### Option A — installer script (works anywhere)
 
 ```bash
-git clone https://github.com/<you>/claude-code-cache-keepalive.git
+git clone https://github.com/demouo/claude-code-cache-keepalive.git
 cd claude-code-cache-keepalive
 ./test.sh            # optional: verify the hooks
 ./install.sh         # install + enable
@@ -70,7 +70,7 @@ Restart Claude Code afterwards.
 If your Claude Code supports the plugin marketplace:
 
 ```
-/plugin marketplace add <you>/claude-code-cache-keepalive
+/plugin marketplace add demouo/claude-code-cache-keepalive
 /plugin install cache-keepalive@claude-cache-tools
 ```
 

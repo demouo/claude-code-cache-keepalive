@@ -1,7 +1,7 @@
 {
   "name": "claude-cache-tools",
   "owner": {
-    "name": "you"
+    "name": "demouo"
   },
   "description": "Tools for managing Claude Code's prompt cache and TTL",
   "plugins": [
