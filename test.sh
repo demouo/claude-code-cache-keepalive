@@ -87,5 +87,23 @@ done
 check "$gone" "yes" "cleanup stops the monitor process"
 check "$( [ -f "$TMP/monitor.C.pid" ] && echo yes || echo no )" "no" "pid file removed"
 
+echo "-- resume after a long gap: stale heartbeat must not fire on startup --"
+printf '%s' "$(( $(date +%s) - 100000 ))" > "$TMP/last_stop.R"   # days-old heartbeat
+CLAUDE_SESSION_ID=R CCKA_IDLE_SECONDS=3 CCKA_TICK_SECONDS=1 CCKA_PING_TEXT=PING_R bash "$MONITOR" >"$TMP/out.R" 2>/dev/null &
+PIDS+=($!)
+sleep 2
+check "$(wc -l < "$TMP/out.R" | tr -d ' ')" "0" "stale heartbeat does not ping immediately on startup"
+sleep 4
+check "$( [ "$(wc -l < "$TMP/out.R" | tr -d ' ')" -ge 1 ] && echo yes || echo no )" "yes" "pings only after a fresh idle window"
+
+echo "-- cleanup must not kill a reused pid --"
+sleep 60 &
+DUMMY=$!; PIDS+=("$DUMMY")
+printf '%s' "$DUMMY" > "$TMP/monitor.Z.pid"
+printf '%s' '{"session_id":"Z"}' | CLAUDE_SESSION_ID=Z bash "$CLEANUP"
+check "$(kill -0 "$DUMMY" 2>/dev/null && echo alive || echo dead)" "alive" "non-matching pid is left alone"
+check "$( [ -f "$TMP/monitor.Z.pid" ] && echo yes || echo no )" "no" "stale pid file removed"
+kill "$DUMMY" 2>/dev/null || true
+
 printf '\npassed: %d   failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

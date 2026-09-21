@@ -45,6 +45,18 @@ postpone the ping for an idle session B. If no session id is visible to the
 monitor it falls back to the shared `last_stop` file (any activity resets it,
 so it never spams).
 
+### Resuming a session later
+
+The heartbeat is per session and persists on disk. When you resume a session
+after a long gap, the stored heartbeat is already older than the idle window,
+so the monitor **resets it to "now" on startup** instead of firing an
+immediate ping against a cold cache. It then behaves normally and pings only
+after a fresh idle window. (The cache is cold anyway after a few hours.)
+
+Stale `monitor.<session>.pid` files are harmless: the `SessionEnd` cleanup
+only kills a pid whose command line actually matches the monitor, so a
+reused pid is left alone.
+
 ### Why a Monitor and not a sleeping Stop hook
 
 | | Stop hook that sleeps | **Monitor** (this repo) |

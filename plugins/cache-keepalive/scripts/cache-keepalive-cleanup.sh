@@ -29,12 +29,20 @@ pid="$(cat "$PIDFILE" 2>/dev/null || true)"
 case "$pid" in
   ''|*[!0-9]*) : ;;
   *)
-    kill "$pid" 2>/dev/null || true
-    for _ in 1 2 3 4 5; do
-      kill -0 "$pid" 2>/dev/null || break
-      sleep 0.2
-    done
-    kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
+    # only kill it if it is really our monitor: a stale pid file can point at
+    # a reused pid belonging to something else entirely
+    cmd="$(ps -p "$pid" -o command= 2>/dev/null || true)"
+    case "$cmd" in
+      *cache-keepalive-monitor*)
+        kill "$pid" 2>/dev/null || true
+        for _ in 1 2 3 4 5; do
+          kill -0 "$pid" 2>/dev/null || break
+          sleep 0.2
+        done
+        kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
+        ;;
+      *) : ;;
+    esac
     ;;
 esac
 rm -f "$PIDFILE"

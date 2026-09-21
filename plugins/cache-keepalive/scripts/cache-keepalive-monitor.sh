@@ -82,6 +82,17 @@ if [ ! -f "$HB" ]; then
   fi
 fi
 
+# A session that is just starting/resuming is "active now". If the stored
+# heartbeat is already older than the idle window (e.g. a session resumed
+# days later, or a monitor restarted long after the last activity), reset it
+# to now so we do not fire a pointless ping with a cold cache on startup.
+_now="$(date +%s)"
+_last="$(cat "$HB" 2>/dev/null || echo "$_now")"
+case "$_last" in ''|*[!0-9]*) _last="$_now" ;; esac
+if [ $((_now - _last)) -ge "$IDLE" ]; then
+  printf '%s' "$_now" > "$HB" 2>/dev/null || true
+fi
+
 log "monitor started (session=${SESSION_LABEL} idle=${IDLE}s tick=${TICK}s hb=$(basename "$HB"))"
 
 while :; do
