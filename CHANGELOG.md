@@ -1,0 +1,60 @@
+# Changelog
+
+All notable changes to this project are documented here.
+Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
+
+## [2.4.0] — housekeeping
+
+### Added
+- `cache-keepalive-housekeep.sh`: at session start (throttled by
+  `CCKA_HOUSEKEEP_INTERVAL`, default 6h), delete dead `monitor.*.pid` files and
+  bundle per-session heartbeats/logs older than `CCKA_RETENTION_DAYS`
+  (default 7) into `archive/cache-keepalive-<date>.tar.gz`, bucketed by the
+  file's last-modified date. Optional `CCKA_ARCHIVE_KEEP_DAYS` pruning.
+- Config: `CCKA_RETENTION_DAYS`, `CCKA_ARCHIVE_KEEP_DAYS`, `CCKA_ARCHIVE_DIR`,
+  `CCKA_HOUSEKEEP_INTERVAL`.
+
+## [2.3.0] — robust resume
+
+### Fixed
+- On startup the monitor resets an already-expired heartbeat to "now", so
+  resuming a session days later no longer fires an immediate, pointless ping
+  against a cold cache.
+- SessionEnd cleanup now kills a pid only if its command line matches the
+  monitor, so a stale `monitor.*.pid` pointing at a reused pid cannot kill an
+  unrelated process.
+
+## [2.2.0] — clean exit
+
+### Added
+- `cache-keepalive-cleanup.sh` (`SessionEnd`): stop this session's monitor
+  during teardown.
+
+### Fixed
+- The monitor's wait is now a background `sleep` + `wait`, so a `SIGTERM`
+  from the cleanup hook is handled immediately instead of being deferred until
+  the foreground `sleep` returned.
+
+## [2.1.0] — per-session timers
+
+### Changed
+- Heartbeat and log are keyed by `CLAUDE_SESSION_ID`
+  (`last_stop.<session>`, `cache-keepalive.<session>.log`), so concurrent
+  sessions keep independent idle timers instead of sharing one global clock.
+- Falls back to the shared `last_stop` when no session id is visible.
+
+## [2.0.0] — Monitor-based idle timer
+
+### Changed (breaking)
+- Replaced the sleeping `Stop` hook with a resettable idle timer: the hook only
+  stamps activity, and a background **Monitor** pings once the session has been
+  idle for `CCKA_IDLE_SECONDS`.
+- No UI blocking, no 8-consecutive-block cap, supports ~50-minute waits.
+- Removed the old `cache-keepalive-stop.sh` / `cache-keepalive-reset.sh` and
+  the stale plugin `userConfig`.
+- `install.sh` migrates old wiring; `uninstall.sh` removes the new scripts.
+
+## [1.0.0] — initial
+
+- `Stop` hook that sleeps and returns `decision: "block"` to keep the prompt
+  cache warm; per-session counters; installer, uninstaller and tests.

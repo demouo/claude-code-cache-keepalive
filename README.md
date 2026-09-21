@@ -1,6 +1,13 @@
 # claude-code-cache-keepalive
 
-Keep Claude Code's **prompt cache warm across idle pauses**.
+<p>
+<a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+<a href="test.sh"><img alt="tests: 27 passing" src="https://img.shields.io/badge/tests-27%20passing-brightgreen"></a>
+<img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
+<img alt="Requires the Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
+</p>
+
+**Keep Claude Code's prompt cache warm across idle pauses — without freezing your terminal.**
 
 A `Stop` hook stamps "the session was active just now"; a background
 **Monitor** watches that timestamp and, only once the session has been idle
@@ -12,10 +19,17 @@ full cache rewrite.
 Built for a **1 hour** cache TTL. On a 5-minute TTL you would set
 `CCKA_IDLE_SECONDS=240`.
 
-> ⚠️ **Billing matters.** This only pays off when you are billed **per
-> token** (API key) *and* your provider refreshes the TTL on cache reads.
-> On request-quota subscriptions (Claude Pro/Max, GLM Coding Plan, …) every
-> ping **eats your quota** — disable it there.
+## Who this is for
+
+✅ **For:** Claude Code on the **official Anthropic API**, billed **per
+token**, with real idle gaps (you think, step away, come back). Every cache
+mismatch after a gap re-writes the whole prefix at 1.25–2×; this pings it back
+to a ~0.1× cache **read** instead.
+
+❌ **Not for:** Pro/Max or any request-quota subscription — pings eat quota and
+save nothing. Third-party Anthropic-compatible gateways (DeepSeek, GLM, …) —
+the Monitor tool is first-party only, so the monitor is skipped. Providers with
+automatic, long-lived caching don't need it at all.
 
 ---
 
@@ -87,6 +101,27 @@ tar -tzf ~/.claude/cache-keepalive/archive/cache-keepalive-2026-09-21.tar.gz
 | Can wait ~50 min in one shot | no (hook timeout) | **yes** |
 | Cost while idle | — | one local `sleep`, 0 tokens |
 | When it pings | after *every* turn | only after real idle |
+
+---
+
+## What it saves
+
+Anthropic prices a **cache read** at ~0.1× base input, a **5-minute cache
+write** at ~1.25×, and a **1-hour cache write** at ~2×. When an idle gap lets
+the cache expire, the next turn re-writes the whole prefix at 1.25–2× instead
+of reading it at 0.1×.
+
+At a 20K-token cached prefix (Sonnet-class, per million tokens):
+
+| | multiplier | cost of one idle refresh |
+| --- | --- | --- |
+| keepalive ping (cache **read**) | 0.1× | ~$0.006 |
+| forced rewrite (cache expired) | 1.25× | ~$0.075 |
+
+That is ~**12 keepalive pings for the price of one forced rewrite**. Covering a
+full 1 h TTL costs a handful of cache reads, so a couple of long breaks a day
+already pays for it. If your pauses are always shorter than the TTL, this does
+nothing for you — leave it off.
 
 ---
 
@@ -163,10 +198,10 @@ Keep that **below the cache TTL**:
 A 5-minute tick is fine for a 1 h TTL, but **not** for a 5-minute TTL —
 lower the tick if you lower the TTL.
 
-Log:
+Log (per session):
 
 ```bash
-tail -f ~/.claude/cache-keepalive/cache-keepalive.log
+tail -f ~/.claude/cache-keepalive/cache-keepalive.<session-id>.log
 ```
 
 ---
@@ -243,6 +278,18 @@ claude plugin uninstall cache-keepalive
 ├── install.sh / uninstall.sh / test.sh
 └── README.md
 ```
+
+## Related / prior art
+
+* **[yujiachen-y/claude-code-cache-keepalive](https://github.com/yujiachen-y/claude-code-cache-keepalive)** —
+  same goal, built as a `Stop` hook that **sleeps** before pinging. It runs on
+  any provider, but it blocks the terminal while waiting and is capped at 8
+  consecutive blocks, so it can only cover ~30 min at a time. This repo uses
+  the **Monitor** tool instead: no UI block, no block cap, and a real 50-min
+  idle timer. Trade-off: it requires the Monitor tool (official Anthropic only).
+* **Aider `--cache-keepalive-pings`**, **Cache-Refresh-SillyTavern**, and
+  **cline/cline#414** — the same "a cache read refreshes the TTL" trick, in
+  other tools.
 
 ## License
 
