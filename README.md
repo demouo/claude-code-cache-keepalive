@@ -125,10 +125,13 @@ At a 20K-token cached prefix (Sonnet-class, per million tokens):
 | keepalive ping (cache **read**) | 0.1× | ~$0.006 |
 | forced rewrite (cache expired) | 1.25× | ~$0.075 |
 
-That is ~**12 keepalive pings for the price of one forced rewrite**. Covering a
-full 1 h TTL costs a handful of cache reads, so a couple of long breaks a day
-already pays for it. If your pauses are always shorter than the TTL, this does
-nothing for you — leave it off.
+That is ~**20 keepalive pings for the price of one forced 1-hour rewrite** (12
+on a 5-minute TTL). Covering a full 1 h TTL costs a handful of cache reads, so a
+couple of long breaks a day already pays for it. If your pauses are always
+shorter than the TTL, this does nothing for you — leave it off.
+
+Full per-model tables (Opus / Sonnet / Haiku / Fable × 20K–1M context) and the
+break-even math: [docs/COST.md](docs/COST.md).
 
 ---
 
