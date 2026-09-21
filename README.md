@@ -179,6 +179,13 @@ claude plugin uninstall cache-keepalive
    unsandboxed at hook trust level.
 6. **Provider.** "A cache read refreshes the TTL" is Anthropic's documented
    behaviour; third-party Anthropic-compatible gateways may differ.
+7. **Exit confirmation.** Claude Code shows a *"Background work is running …
+   Exit anyway?"* prompt whenever a session-scoped monitor is active
+   (anthropics/claude-code#58852, closed as not planned — there is no
+   `silentExit` opt-out). This plugin ships a `SessionEnd` hook that stops the
+   monitor during teardown; whether that removes the prompt depends on the
+   exit ordering, so you may still see it. The default selection is
+   *Exit anyway*, so a plain Enter dismisses it.
 
 ---
 
@@ -189,11 +196,12 @@ claude plugin uninstall cache-keepalive
 ├── .claude-plugin/marketplace.json                       # single-plugin marketplace
 ├── plugins/cache-keepalive/
 │   ├── .claude-plugin/plugin.json                        # plugin manifest
-│   ├── hooks/hooks.json                                  # Stop + UserPromptSubmit -> stamp
+│   ├── hooks/hooks.json                                  # Stop + UserPromptSubmit -> stamp, SessionEnd -> cleanup
 │   ├── monitors/monitors.json                            # auto-start idle monitor
 │   └── scripts/
 │       ├── cache-keepalive-stamp.sh                      # record last_stop
-│       └── cache-keepalive-monitor.sh                    # idle timer -> ping
+│       ├── cache-keepalive-monitor.sh                    # idle timer -> ping
+│       └── cache-keepalive-cleanup.sh                    # SessionEnd: stop the monitor
 ├── install.sh / uninstall.sh / test.sh
 └── README.md
 ```

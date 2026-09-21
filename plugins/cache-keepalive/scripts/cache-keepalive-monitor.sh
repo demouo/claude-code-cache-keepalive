@@ -60,6 +60,13 @@ IDLE="${CCKA_IDLE_SECONDS:-3000}"
 TICK="${CCKA_TICK_SECONDS:-300}"
 MESSAGE="${CCKA_PING_TEXT:-cache keepalive: this session has been idle; reply with a single word so the prompt cache stays warm.}"
 
+# record our pid so a SessionEnd hook can stop us before the exit check
+PIDFILE="$STATE_DIR/monitor.$SESSION_LABEL.pid"
+printf '%s' "$$" > "$PIDFILE" 2>/dev/null || true
+_cleanup() { rm -f "$PIDFILE" 2>/dev/null || true; }
+trap _cleanup EXIT
+trap '_cleanup; exit 0' INT TERM
+
 case "$IDLE" in ''|*[!0-9]*) IDLE=3000 ;; esac
 case "$TICK" in ''|*[!0-9]*) TICK=300 ;; esac
 [ "$TICK" -lt 1 ] && TICK=300
@@ -78,7 +85,11 @@ fi
 log "monitor started (session=${SESSION_LABEL} idle=${IDLE}s tick=${TICK}s hb=$(basename "$HB"))"
 
 while :; do
-  sleep "$TICK" || exit 0
+  # background sleep + wait: `wait` is interrupted immediately by trap
+  # signals, so the SessionEnd cleanup can stop us promptly (a foreground
+  # `sleep` would defer the trap until the sleep finished).
+  sleep "$TICK" &
+  wait $! 2>/dev/null || true
 
   now="$(date +%s)"
   last="$(cat "$HB" 2>/dev/null || echo "$now")"

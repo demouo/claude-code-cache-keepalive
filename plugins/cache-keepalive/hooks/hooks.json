@@ -23,6 +23,18 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/cache-keepalive-cleanup.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }

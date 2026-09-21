@@ -10,6 +10,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-stamp.sh"
 MONITOR="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-monitor.sh"
+CLEANUP="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-cleanup.sh"
 
 TMP="$(mktemp -d)"
 PIDS=()
@@ -70,6 +71,21 @@ CCKA_ENABLED=0 CCKA_IDLE_SECONDS=1 CCKA_TICK_SECONDS=1 bash "$MONITOR" >"$TMP/of
 PIDS+=($!)
 sleep 2
 check "$(wc -l < "$TMP/off" | tr -d ' ')" "0" "CCKA_ENABLED=0 is a no-op"
+
+echo "-- SessionEnd cleanup stops this session's monitor --"
+CLAUDE_SESSION_ID=C CCKA_IDLE_SECONDS=300 CCKA_TICK_SECONDS=300 bash "$MONITOR" >"$TMP/out.C" 2>/dev/null &
+MPID=$!; PIDS+=("$MPID")
+sleep 1
+check "$( [ -f "$TMP/monitor.C.pid" ] && echo yes || echo no )" "yes" "monitor writes its pid file"
+printf '%s' '{"session_id":"C"}' | CLAUDE_SESSION_ID=C bash "$CLEANUP"
+gone=no
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  s="$(awk '{print $3}' /proc/$MPID/stat 2>/dev/null)"
+  if [ -z "$s" ] || [ "$s" = "Z" ]; then gone=yes; break; fi
+  sleep 0.2
+done
+check "$gone" "yes" "cleanup stops the monitor process"
+check "$( [ -f "$TMP/monitor.C.pid" ] && echo yes || echo no )" "no" "pid file removed"
 
 printf '\npassed: %d   failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
