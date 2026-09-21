@@ -2,13 +2,13 @@
 # ============================================================
 # cache-keepalive-stamp.sh  --  Stop + UserPromptSubmit hook
 # ============================================================
-# Fast, non-blocking. It only records "the session was active now"
-# so the background monitor can measure how long the session has been
-# idle. It never sleeps and never blocks, so it does not stall the UI
-# and is not subject to the Stop-hook 8-consecutive-block cap.
+# Fast, non-blocking. Records "this session was active now" so the
+# background monitor can measure how long *this session* has been idle.
 #
-# Every Stop re-stamps, which is what makes the monitor's timer a
-# resettable idle timer instead of a fixed cron interval.
+# Per-session: the heartbeat is keyed by the Claude Code session id
+# (CLAUDE_SESSION_ID, falling back to the stdin session_id), so multiple
+# concurrent sessions keep independent idle timers. A global last_stop
+# is also written as a fallback for a monitor that cannot see a session id.
 # ============================================================
 set -uo pipefail
 
@@ -18,13 +18,18 @@ mkdir -p "$STATE_DIR" 2>/dev/null || true
 input="$(cat 2>/dev/null || true)"
 now="$(date +%s)"
 
-# global activity heartbeat (what the monitor watches)
-printf '%s' "$now" > "$STATE_DIR/last_stop" 2>/dev/null || true
+# key preference must match the monitor: env first, then the hook's stdin
+key="${CLAUDE_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-}}"
+if [ -z "$key" ]; then
+  key="$(printf '%s' "$input" \
+    | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]*"' \
+    | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')"
+fi
+[ -n "$key" ] || key="default"
+safe="$(printf '%s' "$key" | tr -c 'A-Za-z0-9._-' '_')"
 
-# remember the session id for logging / debugging only
-sid="$(printf '%s' "$input" \
-  | grep -o '"session_id"[[:space:]]*:[[:space:]]*"[^"]*"' \
-  | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')"
-[ -n "$sid" ] && printf '%s' "$sid" > "$STATE_DIR/last_session" 2>/dev/null || true
+printf '%s' "$now" > "$STATE_DIR/last_stop.$safe" 2>/dev/null || true
+printf '%s' "$now" > "$STATE_DIR/last_stop"       2>/dev/null || true   # fallback
+printf '%s' "$safe" > "$STATE_DIR/last_session"   2>/dev/null || true
 
 exit 0

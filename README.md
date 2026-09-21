@@ -38,6 +38,13 @@ Because the timer is `now - last_stop`, it is a **resettable idle timer**:
 every Stop restarts the 50-minute window. An actively used session is never
 pinged; only a genuinely idle one is.
 
+**Per-session:** each session starts its own monitor, and the heartbeat/log
+are keyed by the Claude Code session id (`CLAUDE_SESSION_ID`), so concurrent
+sessions keep **independent** idle timers — activity in session A does not
+postpone the ping for an idle session B. If no session id is visible to the
+monitor it falls back to the shared `last_stop` file (any activity resets it,
+so it never spams).
+
 ### Why a Monitor and not a sleeping Stop hook
 
 | | Stop hook that sleeps | **Monitor** (this repo) |
@@ -100,6 +107,7 @@ visible to monitors, so use the config file or environment.)
 | `CCKA_TICK_SECONDS` | `300` | Poll granularity (5 min) |
 | `CCKA_PING_TEXT` | bland text | The line delivered to Claude |
 | `CCKA_STATE_DIR` | `~/.claude/cache-keepalive` | State + log directory |
+| `CCKA_LOG` | `$CCKA_STATE_DIR/cache-keepalive.<session>.log` | Explicit log path override |
 | `CCKA_ENABLED` | `1` | `0` / `false` / `no` / `off` disables the monitor |
 
 ### Timing rule
@@ -161,10 +169,10 @@ claude plugin uninstall cache-keepalive
    only in **interactive CLI** sessions.
 2. **Billing.** API/token billing only; disable on request-quota
    subscriptions.
-3. **Multi-session heartbeat.** `last_stop` is a single file, so concurrent
-   interactive sessions share the timer — activity in any session postpones
-   the ping for all. Key the file by `session_id` if you need strict
-   per-session timers.
+3. **Multi-session.** Each session runs its own monitor and heartbeat
+   (`last_stop.<session_id>`), so timers are independent. The only shared
+   case is a monitor that cannot see `CLAUDE_SESSION_ID`, which falls back
+   to the global `last_stop`.
 4. **The ping is a real turn.** It appears in the transcript and costs one
    cache read + a short reply. Keep `CCKA_PING_TEXT` bland.
 5. **Experimental.** Plugin monitors are an experimental component and run
