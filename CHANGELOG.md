@@ -3,6 +3,18 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.7.1] — pass the session id to the monitor explicitly
+
+### Fixed
+- The plugin monitor relied on `CLAUDE_SESSION_ID` being present in its
+  process environment. It is not: Claude Code only substitutes
+  `${CLAUDE_SESSION_ID}` **inside configured command strings**; it is not
+  exported to subprocesses (anthropics/claude-code#47018, #25642). Every
+  monitor therefore fell back to the shared `global` heartbeat and the
+  per-session timers were inert. `monitors.json` now passes
+  `--session "${CLAUDE_SESSION_ID}"`, and the monitor accepts `--session <id>`
+  (still falling back to the environment).
+
 ## [2.7.0] — session-scoped opt-out
 
 ### Changed

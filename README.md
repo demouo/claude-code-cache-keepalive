@@ -4,7 +4,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 48 passing" src="https://img.shields.io/badge/tests-48%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 51 passing" src="https://img.shields.io/badge/tests-51%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="Requires the Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 <a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
@@ -84,11 +84,14 @@ every Stop restarts the 50-minute window. An actively used session is never
 pinged; only a genuinely idle one is.
 
 **Per-session:** each session starts its own monitor, and the heartbeat/log
-are keyed by the Claude Code session id (`CLAUDE_SESSION_ID`), so concurrent
-sessions keep **independent** idle timers — activity in session A does not
-postpone the ping for an idle session B. If no session id is visible to the
-monitor it falls back to the shared `last_stop` file (any activity resets it,
-so it never spams).
+are keyed by the Claude Code session id, so concurrent sessions keep
+**independent** idle timers — activity in session A does not postpone the ping
+for an idle session B. The id is handed over explicitly (`monitors.json` runs the
+monitor with `--session "${CLAUDE_SESSION_ID}"`), because Claude Code substitutes
+that token inside a configured command string but does **not** export it to the
+process environment ([anthropics/claude-code#47018](https://github.com/anthropics/claude-code/issues/47018)).
+If no id is visible the monitor falls back to the shared `last_stop` file (any
+activity resets it, so it never spams).
 
 ### Resuming a session later
 

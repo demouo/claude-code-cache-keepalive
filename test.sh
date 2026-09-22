@@ -158,6 +158,16 @@ PIDS+=($!); sleep 2
 check "$(wc -l < "$TMP/out.G3" | tr -d ' ')" "0" "project opt-out file -> no ping"
 rm -f "$TMP/proj/.claude/cache-keepalive-off"
 
+echo "-- monitor --session <id>: explicit session (env is not exported) --"
+printf '%s' "$(date +%s)" > "$TMP/last_stop.S9"
+CLAUDE_SESSION_ID= CLAUDE_CODE_SESSION_ID= CCKA_IDLE_SECONDS=2 CCKA_TICK_SECONDS=1 CCKA_PING_TEXT=PING_S9 bash "$MONITOR" --session S9 >"$TMP/out.S9" 2>/dev/null &
+PIDS+=($!)
+sleep 1
+check "$( [ -f "$TMP/monitor.S9.pid" ] && echo yes || echo no )" "yes" "--session writes monitor.S9.pid"
+check "$( [ -f "$TMP/cache-keepalive.S9.log" ] && echo yes || echo no )" "yes" "--session logs to cache-keepalive.S9.log"
+sleep 3
+check "$( [ "$(wc -l < "$TMP/out.S9" | tr -d ' ')" -ge 1 ] && echo yes || echo no )" "yes" "--session pings from its own heartbeat"
+
 echo "-- ctl off-all/on-all (every session) --"
 CLAUDE_SESSION_ID=H CCKA_IDLE_SECONDS=300 CCKA_TICK_SECONDS=300 bash "$MONITOR" >"$TMP/out.H" 2>/dev/null &
 HPID=$!; PIDS+=("$HPID"); sleep 1

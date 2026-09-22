@@ -46,8 +46,20 @@ if [ -f "$CFG" ]; then
   . "$CFG" 2>/dev/null || true
 fi
 
+# --session "<id>": Claude Code substitutes ${CLAUDE_SESSION_ID} inside the
+# configured monitor command, but the variable is NOT exported to the process
+# environment, so we must be told explicitly. Falls back to the env if present.
+SESSION_ARG=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --session)   shift; SESSION_ARG="${1:-}" ;;
+    --session=*) SESSION_ARG="${1#--session=}" ;;
+  esac
+  shift || true
+done
+
 # per-session key (must match cache-keepalive-stamp.sh)
-key="${CLAUDE_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-}}"
+key="${SESSION_ARG:-${CLAUDE_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-}}}"
 safe="$(printf '%s' "$key" | tr -c 'A-Za-z0-9._-' '_')"
 if [ -n "$safe" ]; then
   HB="$STATE_DIR/last_stop.$safe"

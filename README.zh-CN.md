@@ -4,7 +4,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 48 passing" src="https://img.shields.io/badge/tests-48%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 51 passing" src="https://img.shields.io/badge/tests-51%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="requires Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 <a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
@@ -200,6 +200,9 @@ claude plugin uninstall cache-keepalive
    #58852，官方标记为 not planned，插件侧关不掉）。默认选项就是 *Exit anyway*，
    回车即可。
 5. 每个会话各自计时；隔很久再 resume 时会把过期的心跳重置成"现在"，不会一进来就 ping。
+   会话 id 是**显式传入**的（`monitors.json` 用 `--session "${CLAUDE_SESSION_ID}"` 启动 monitor）：
+   这个 token 只在"配置的命令字符串"里被替换，**并不是**导出给进程的环境变量
+   （[#47018](https://github.com/anthropics/claude-code/issues/47018)）；否则所有会话都会退化成共享的 global 心跳。
 6. 旧的状态文件会在会话启动时按日期打包进 `archive/cache-keepalive-<日期>.tar.gz`。
 7. 空闲超过 `CCKA_MAX_IDLE_SECONDS`（默认 12 小时）会停止 ping，免得晾着的会话白烧
    额度；一旦有新活动（发消息 / Stop）就自动恢复。
