@@ -3,6 +3,22 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.6.0] — explicit on/off control
+
+### Added
+- `/cache-keepalive:off` (and `:on`, `:status`) skills, plus
+  `scripts/cache-keepalive-ctl.sh status|on|off`.
+- The monitor now honours opt-out markers on every start: a global
+  `disabled` file, a per-session `disabled.<session>` file, and a per-project
+  `<project>/.claude/cache-keepalive-off`. Together with `CCKA_ENABLED=0` this
+  means a manual stop is remembered instead of being silently undone by a
+  plugin reload or the next session.
+
+### Why
+- Deleting the monitor from Claude Code's task list used to be a one-way door,
+  and `/reload-plugins` would quietly bring it back. State was consistent
+  either way, but the user's intent was not respected.
+
 ## [2.5.0] — idle cap + correct subscription positioning
 
 ### Added

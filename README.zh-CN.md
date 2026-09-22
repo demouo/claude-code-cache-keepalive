@@ -4,7 +4,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 29 passing" src="https://img.shields.io/badge/tests-29%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 36 passing" src="https://img.shields.io/badge/tests-36%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="requires Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 <a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
@@ -144,6 +144,32 @@ Monitor 的读取顺序是：**环境变量 → `~/.claude/cache-keepalive/confi
 ```bash
 tail -f ~/.claude/cache-keepalive/cache-keepalive.<session-id>.log
 # 看到 "emitting keepalive"，同时 Claude 自己冒出一句回复，就说明整条链路通了
+```
+
+## 开关与状态
+
+Monitor 会随会话自动启动，但你可以让它不启动、也可以随时关掉，而且"关掉"会被记住：
+
+| 想要 | 怎么做 |
+| --- | --- |
+| 立刻停掉 | 在 Claude Code 的任务列表里按 `x` 删除，或 `/cache-keepalive:off` |
+| 关掉并且保持关闭 | `/cache-keepalive:off`（会写一个全局标记） |
+| 这个项目不要启动 | `touch <项目>/.claude/cache-keepalive-off` |
+| 哪儿都不要启动 | 在 `~/.claude/cache-keepalive/config` 里写 `CCKA_ENABLED=0` |
+| 重新打开 | `/cache-keepalive:on`，然后 `/reload-plugins` |
+| 看现在在不在跑 | `/cache-keepalive:status` |
+
+`/cache-keepalive:off` 会停掉正在跑的 monitor，并写入
+`~/.claude/cache-keepalive/disabled`。monitor 在**每次启动**时都会先看这个标记，
+所以之后再 `/reload-plugins`、或者开新会话，都**不会偷偷把它带回来**。
+
+手动按 `x` 删掉也没问题——状态是一致的：残留的 pid 文件会被清理，而且复用的 PID
+绝不会被误杀。
+
+同样的开关也提供成了普通脚本：
+
+```bash
+bash plugins/cache-keepalive/scripts/cache-keepalive-ctl.sh status|on|off
 ```
 
 ## 卸载

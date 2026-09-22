@@ -9,14 +9,17 @@
 # which starts a fresh turn -> a cache read -> the prompt-cache TTL is
 # refreshed.
 #
-# Pinging stops once the session has been idle for CCKA_MAX_IDLE_SECONDS
-# (default 12h): by then the cache is long gone and pinging an abandoned
-# session just burns usage. Real activity (a new Stop / prompt) resets it.
+# It starts only when the user wants it:
+#   * CCKA_ENABLED=0                            -> never
+#   * ~/.claude/cache-keepalive/disabled.<sid>  -> not for this session
+#     (created by /cache-keepalive:off, removed by :on)
+#   * <project>/.claude/cache-keepalive-off     -> not for this project
+# and it stops pinging once the session has been idle for
+# CCKA_MAX_IDLE_SECONDS (default 12h); real activity resets that.
 #
-# Per-session: the heartbeat, ping marker and log are keyed by the Claude
-# Code session id (CLAUDE_SESSION_ID, falling back to CLAUDE_CODE_SESSION_ID),
-# so concurrent sessions keep independent idle timers. If no session id is
-# visible in the environment it falls back to the shared global files.
+# Per-session: heartbeat, ping marker and log are keyed by the Claude Code
+# session id (CLAUDE_SESSION_ID), so concurrent sessions keep independent
+# idle timers. With no session id visible it falls back to shared global files.
 #
 # Config (env first, else ~/.claude/cache-keepalive/config, else default):
 #   CCKA_IDLE_SECONDS       idle before pinging        (default 3000 = 50 min)
@@ -29,8 +32,7 @@
 #
 # With a 1h TTL (Claude Pro/Max default) and idle=50min, a 5min tick means
 # the ping fires somewhere in [50, 55] min after the last activity -- the
-# extra tick of slack is deliberately kept below 60min. Keep TICK small
-# relative to (TTL - IDLE).
+# extra tick of slack is deliberately kept below 60min.
 # ============================================================
 set -uo pipefail
 
@@ -44,24 +46,43 @@ if [ -f "$CFG" ]; then
   . "$CFG" 2>/dev/null || true
 fi
 
-# master switch (default on); disable with CCKA_ENABLED=0 or plugin disable
-case "$(printf '%s' "${CCKA_ENABLED:-1}" | tr '[:upper:]' '[:lower:]')" in
-  0|false|no|off) exit 0 ;;
-esac
-
 # per-session key (must match cache-keepalive-stamp.sh)
 key="${CLAUDE_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-}}"
 safe="$(printf '%s' "$key" | tr -c 'A-Za-z0-9._-' '_')"
 if [ -n "$safe" ]; then
   HB="$STATE_DIR/last_stop.$safe"
   PINGFILE="$STATE_DIR/last_ping.$safe"
+  DISABLED="$STATE_DIR/disabled.$safe"
   LOG="${CCKA_LOG:-$STATE_DIR/cache-keepalive.$safe.log}"
   SESSION_LABEL="$safe"
 else
   HB="$STATE_DIR/last_stop"
   PINGFILE="$STATE_DIR/last_ping"
+  DISABLED="$STATE_DIR/disabled"
   LOG="${CCKA_LOG:-$STATE_DIR/cache-keepalive.log}"
   SESSION_LABEL="global"
+fi
+
+log() { printf '[%s] [CACHE-KEEPALIVE-MONITOR] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG" 2>/dev/null || true; }
+
+# --- start-up gates ------------------------------------------------------
+# master switch (default on)
+case "$(printf '%s' "${CCKA_ENABLED:-1}" | tr '[:upper:]' '[:lower:]')" in
+  0|false|no|off) log "CCKA_ENABLED=off; not starting"; exit 0 ;;
+esac
+
+# opt-out markers (created by /cache-keepalive:off, removed by :on). The global
+# one disables every session; the per-session one only this session. Checked on
+# every start, so turning it off also survives a plugin reload.
+if [ -f "$STATE_DIR/disabled" ] || [ -f "$DISABLED" ]; then
+  log "disabled marker present; not starting (use /cache-keepalive:on to re-arm)"
+  exit 0
+fi
+
+# per-project opt-out: <project>/.claude/cache-keepalive-off
+if [ -n "${CLAUDE_PROJECT_DIR:-}" ] && [ -f "$CLAUDE_PROJECT_DIR/.claude/cache-keepalive-off" ]; then
+  log "project opt-out at $CLAUDE_PROJECT_DIR/.claude/cache-keepalive-off; not starting"
+  exit 0
 fi
 
 IDLE="${CCKA_IDLE_SECONDS:-3000}"
@@ -74,14 +95,12 @@ case "$TICK"     in ''|*[!0-9]*) TICK=300 ;; esac
 case "$MAX_IDLE" in ''|*[!0-9]*) MAX_IDLE=43200 ;; esac
 [ "$TICK" -lt 1 ] && TICK=300
 
-# record our pid so a SessionEnd hook can stop us before the exit check
+# record our pid so a SessionEnd hook / the ctl script can stop us
 PIDFILE="$STATE_DIR/monitor.$SESSION_LABEL.pid"
 printf '%s' "$$" > "$PIDFILE" 2>/dev/null || true
 _cleanup() { rm -f "$PIDFILE" 2>/dev/null || true; }
 trap _cleanup EXIT
 trap '_cleanup; exit 0' INT TERM
-
-log() { printf '[%s] [CACHE-KEEPALIVE-MONITOR] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG" 2>/dev/null || true; }
 
 # bootstrap for this session: prefer the global heartbeat if we have none yet
 if [ ! -f "$HB" ]; then

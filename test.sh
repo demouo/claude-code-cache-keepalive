@@ -11,6 +11,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAMP="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-stamp.sh"
 MONITOR="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-monitor.sh"
 CLEANUP="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-cleanup.sh"
+CTL="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-ctl.sh"
 HOUSEKEEP="$HERE/plugins/cache-keepalive/scripts/cache-keepalive-housekeep.sh"
 
 TMP="$(mktemp -d)"
@@ -137,6 +138,41 @@ stamp CAP
 sleep 3
 m="$(wc -l < "$TMP/out.CAP" | tr -d ' ')"
 check "$( [ "$m" -gt "$n" ] && echo yes || echo no )" "yes" "new activity resumes pinging"
+
+echo "-- opt-out markers prevent the monitor from starting --"
+: > "$TMP/disabled"
+CLAUDE_SESSION_ID=G1 CCKA_IDLE_SECONDS=1 CCKA_TICK_SECONDS=1 bash "$MONITOR" >"$TMP/out.G1" 2>/dev/null &
+PIDS+=($!); sleep 2
+check "$(wc -l < "$TMP/out.G1" | tr -d ' ')" "0" "global disabled marker -> no ping"
+rm -f "$TMP/disabled"
+
+: > "$TMP/disabled.G2"
+CLAUDE_SESSION_ID=G2 CCKA_IDLE_SECONDS=1 CCKA_TICK_SECONDS=1 bash "$MONITOR" >"$TMP/out.G2" 2>/dev/null &
+PIDS+=($!); sleep 2
+check "$(wc -l < "$TMP/out.G2" | tr -d ' ')" "0" "per-session disabled marker -> no ping"
+rm -f "$TMP/disabled.G2"
+
+mkdir -p "$TMP/proj/.claude"; : > "$TMP/proj/.claude/cache-keepalive-off"
+CLAUDE_PROJECT_DIR="$TMP/proj" CLAUDE_SESSION_ID=G3 CCKA_IDLE_SECONDS=1 CCKA_TICK_SECONDS=1 bash "$MONITOR" >"$TMP/out.G3" 2>/dev/null &
+PIDS+=($!); sleep 2
+check "$(wc -l < "$TMP/out.G3" | tr -d ' ')" "0" "project opt-out file -> no ping"
+rm -f "$TMP/proj/.claude/cache-keepalive-off"
+
+echo "-- ctl off/on --"
+CLAUDE_SESSION_ID=H CCKA_IDLE_SECONDS=300 CCKA_TICK_SECONDS=300 bash "$MONITOR" >"$TMP/out.H" 2>/dev/null &
+HPID=$!; PIDS+=("$HPID"); sleep 1
+check "$( [ -f "$TMP/monitor.H.pid" ] && echo yes || echo no )" "yes" "monitor H is running"
+CLAUDE_SESSION_ID=H bash "$CTL" off >/dev/null
+hgone=no
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  s="$(awk '{print $3}' /proc/$HPID/stat 2>/dev/null)"
+  if [ -z "$s" ] || [ "$s" = "Z" ]; then hgone=yes; break; fi
+  sleep 0.2
+done
+check "$hgone" "yes" "ctl off stops the monitor"
+check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "yes" "ctl off writes the global marker"
+CLAUDE_SESSION_ID=H bash "$CTL" on >/dev/null
+check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "no" "ctl on clears the global marker"
 
 printf '\npassed: %d   failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
