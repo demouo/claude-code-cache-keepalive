@@ -250,5 +250,14 @@ bash "$CTL" on-all >/dev/null
 check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "no" "on-all clears the global marker"
 check "$( [ -f "$TMP/disabled.OTHER" ] && echo yes || echo no )" "no" "on-all clears other sessions' markers"
 
+echo "-- shipped skills stay out of Claude's context --"
+missing=""
+for f in "$HERE"/plugins/cache-keepalive/skills/*/SKILL.md; do
+  [ -f "$f" ] || continue
+  grep -q '^disable-model-invocation: true' "$f" || missing="$missing $(basename "$(dirname "$f")")"
+done
+check "$missing" "" "every skill sets disable-model-invocation: true"
+check "$(ls -1 "$HERE"/plugins/cache-keepalive/skills | sort | tr '\n' ' ')" "off status " "only the manual off/status controls ship"
+
 printf '\npassed: %d   failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

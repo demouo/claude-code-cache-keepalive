@@ -3,6 +3,23 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [3.0.0] — trim the command surface to manual off/status
+
+### Changed (breaking)
+- Removed the `/cache-keepalive:on`, `/cache-keepalive:on-all`, and
+  `/cache-keepalive:off-all` skills. Only `/cache-keepalive:off` and
+  `/cache-keepalive:status` remain. The full control set is still available in
+  `cache-keepalive-ctl.sh` (`status|on|off|on-all|off-all`), and the on-disk
+  markers (`disabled`, `disabled.<session>`, `CCKA_ENABLED`) stay the single
+  source of truth the monitor reads — the commands only flip them.
+- Both remaining skills set `disable-model-invocation: true`, so Claude no
+  longer lists or auto-loads them. They are manual controls and should not sit
+  in the model's context.
+- Both skills now call the bundled script through `${CLAUDE_PLUGIN_ROOT}`
+  instead of a cache-path glob plus a duplicated inline fallback. That fallback
+  was dead code when the plugin was installed, and it had reintroduced the
+  `pgrep -f` substring match fixed in 2.7.2. Tests 57 -> 59.
+
 ## [2.7.3] — bland default ping text
 
 ### Changed
