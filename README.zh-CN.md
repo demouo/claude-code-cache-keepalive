@@ -50,9 +50,12 @@ ping，刚好卡在"20 次 ping = 一次 1 小时重写"的盈亏线以内。20K
 
 API key 的默认 TTL 只有 **5 分钟**，那就得把参数调小，或者自己设成 1 小时——见"时序约束"。
 
-❌ **不适合**：DeepSeek / GLM / OpenRouter 这类第三方 Anthropic 兼容网关，以及
-Bedrock / Vertex / Foundry。**Monitor 工具只有官方才有**，这些环境下 monitor 根本起不来；
-何况它们的缓存机制本来也不同。
+🔌 **第三方 API / 网关也能用**：插件**不检测你的 provider**，DeepSeek、GLM、
+OpenRouter、自建代理、各类 Anthropic 兼容网关都可以——**只要 Monitor 能正常启动**。
+能不能启动完全由 Claude Code 决定，跟本插件无关：Monitor 工具**只有官方才有**，设置了
+下面的禁用遥测环境变量、或跑在 Bedrock / Vertex / Foundry 上时它就不会启动。只要你的
+环境起得来 monitor，keepalive 就照常工作；唯一要留意的是别家服务的缓存语义可能不同
+（读缓存未必同样刷新 TTL），所以下面的省钱账不一定成立。
 
 ## 原理
 
@@ -192,7 +195,8 @@ claude plugin uninstall cache-keepalive
 
 1. **依赖 Monitor 工具**：需要较新的 Claude Code；一旦设置了 `DISABLE_TELEMETRY`
    或 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`，Monitor 就不可用；Bedrock /
-   Vertex / Foundry 也不支持。插件 monitor 只在**交互式 CLI** 会话里运行。
+   Vertex / Foundry 也不支持。插件 monitor 只在**交互式 CLI** 会话里运行。插件本身不检测
+   provider：只要能启动 monitor——任何 API、任何网关——keepalive 一样能用。
 2. **订阅和 API 都适用**。订阅制下的价值不在省 token 账单，而在于避免"空闲超过
    1 小时后再把整段前缀重新算一遍"——那更慢，也更吃套餐额度；ping 本身只花一次缓存读。
 3. **每次 ping 都是一个真实回合**：会出现在对话记录里，消耗一次缓存读加一句回复。

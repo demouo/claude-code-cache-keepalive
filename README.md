@@ -57,10 +57,15 @@ defaults (50 min) are tuned for that 1-hour TTL.
 On an **API key** the default TTL is 5 minutes, so lower the numbers or set a
 1-hour TTL yourself — see [Timing rule](#timing-rule).
 
-❌ **Not for:** third-party Anthropic-compatible gateways (DeepSeek, GLM,
-OpenRouter, …) and Bedrock / Vertex / Foundry — the **Monitor tool is
-first-party only**, so the monitor is skipped there, and their cache semantics
-differ anyway.
+🔌 **Other APIs / gateways?** The plugin **never inspects your provider**, so
+any endpoint works — DeepSeek, GLM, OpenRouter, a self-hosted proxy, any
+Anthropic-compatible gateway — **as long as the Monitor tool starts normally**.
+Whether it starts is decided entirely by Claude Code, not by this plugin: the
+Monitor tool is **first-party only** and is skipped when the telemetry-disable
+env vars below are set or on Bedrock / Vertex / Foundry. If your setup can
+start a monitor, the keepalive runs on it unchanged — just keep in mind that
+other services may have different cache semantics (a cache read may not
+refresh the TTL the same way), so the cost math below may not hold.
 
 ---
 
@@ -314,7 +319,9 @@ claude plugin uninstall cache-keepalive
    is **not available** when `DISABLE_TELEMETRY` or
    `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` is set, nor on Amazon Bedrock,
    Google Cloud's Agent Platform, or Microsoft Foundry. Plugin monitors run
-   only in **interactive CLI** sessions.
+   only in **interactive CLI** sessions. The plugin itself does not check the
+   provider: if your setup can start a monitor — any API, any gateway — the
+   keepalive runs there too.
 2. **Usage.** Works on both a Pro/Max subscription and API billing. On a
    subscription the point is to avoid a full prefix re-processing (which drains
    plan usage) after an idle gap longer than the 1-hour TTL, not to cut a
@@ -328,8 +335,10 @@ claude plugin uninstall cache-keepalive
    cache read + a short reply. Keep `CCKA_PING_TEXT` bland.
 5. **Experimental.** Plugin monitors are an experimental component and run
    unsandboxed at hook trust level.
-6. **Provider.** "A cache read refreshes the TTL" is Anthropic's documented
-   behaviour; third-party Anthropic-compatible gateways may differ.
+6. **Provider.** The keepalive runs on any provider whose Claude Code can
+   start a Monitor. That said, "a cache read refreshes the TTL" is Anthropic's
+   documented behaviour; third-party Anthropic-compatible gateways may differ,
+   so the savings are not guaranteed there.
 7. **Exit confirmation.** Claude Code shows a *"Background work is running …
    Exit anyway?"* prompt whenever a session-scoped monitor is active
    (anthropics/claude-code#58852, closed as not planned — there is no
@@ -367,7 +376,8 @@ claude plugin uninstall cache-keepalive
   any provider, but it blocks the terminal while waiting and is capped at 8
   consecutive blocks, so it can only cover ~30 min at a time. This repo uses
   the **Monitor** tool instead: no UI block, no block cap, and a real 50-min
-  idle timer. Trade-off: it requires the Monitor tool (official Anthropic only).
+  idle timer. Trade-off: it requires the Monitor tool — and where that tool
+  can start, any provider works.
 * **Aider `--cache-keepalive-pings`**, **Cache-Refresh-SillyTavern**, and
   **cline/cline#414** — the same "a cache read refreshes the TTL" trick, in
   other tools.
