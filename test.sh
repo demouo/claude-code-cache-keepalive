@@ -158,21 +158,63 @@ PIDS+=($!); sleep 2
 check "$(wc -l < "$TMP/out.G3" | tr -d ' ')" "0" "project opt-out file -> no ping"
 rm -f "$TMP/proj/.claude/cache-keepalive-off"
 
-echo "-- ctl off/on --"
+echo "-- ctl off-all/on-all (every session) --"
 CLAUDE_SESSION_ID=H CCKA_IDLE_SECONDS=300 CCKA_TICK_SECONDS=300 bash "$MONITOR" >"$TMP/out.H" 2>/dev/null &
 HPID=$!; PIDS+=("$HPID"); sleep 1
 check "$( [ -f "$TMP/monitor.H.pid" ] && echo yes || echo no )" "yes" "monitor H is running"
-CLAUDE_SESSION_ID=H bash "$CTL" off >/dev/null
+CLAUDE_SESSION_ID=H bash "$CTL" off-all >/dev/null
 hgone=no
 for _ in 1 2 3 4 5 6 7 8 9 10; do
   s="$(awk '{print $3}' /proc/$HPID/stat 2>/dev/null)"
   if [ -z "$s" ] || [ "$s" = "Z" ]; then hgone=yes; break; fi
   sleep 0.2
 done
-check "$hgone" "yes" "ctl off stops the monitor"
-check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "yes" "ctl off writes the global marker"
-CLAUDE_SESSION_ID=H bash "$CTL" on >/dev/null
-check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "no" "ctl on clears the global marker"
+check "$hgone" "yes" "ctl off-all stops the monitor"
+check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "yes" "ctl off-all writes the global marker"
+CLAUDE_SESSION_ID=H bash "$CTL" on-all >/dev/null
+check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "no" "ctl on-all clears the global marker"
+
+echo "-- ctl off/on: this session only --"
+CLAUDE_SESSION_ID=S1 CCKA_IDLE_SECONDS=300 CCKA_TICK_SECONDS=300 bash "$MONITOR" >"$TMP/out.S1" 2>/dev/null &
+S1PID=$!; PIDS+=("$S1PID")
+CLAUDE_SESSION_ID=S2 CCKA_IDLE_SECONDS=300 CCKA_TICK_SECONDS=300 bash "$MONITOR" >"$TMP/out.S2" 2>/dev/null &
+S2PID=$!; PIDS+=("$S2PID")
+sleep 1
+check "$( [ -f "$TMP/monitor.S1.pid" ] && echo yes || echo no )" "yes" "S1 monitor is running"
+CLAUDE_SESSION_ID=S1 bash "$CTL" off >/dev/null
+s1gone=no
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  s="$(awk '{print $3}' /proc/$S1PID/stat 2>/dev/null)"
+  if [ -z "$s" ] || [ "$s" = "Z" ]; then s1gone=yes; break; fi
+  sleep 0.2
+done
+check "$s1gone" "yes" "off stops this session's monitor"
+check "$(kill -0 "$S2PID" 2>/dev/null && echo alive || echo dead)" "alive" "off leaves other sessions running"
+check "$( [ -f "$TMP/disabled.S1" ] && echo yes || echo no )" "yes" "off writes the per-session marker"
+check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "no" "off does NOT write the global marker"
+
+# a session carrying the marker must not auto-start on a later (re)launch
+CLAUDE_SESSION_ID=S1 CCKA_IDLE_SECONDS=1 CCKA_TICK_SECONDS=1 bash "$MONITOR" >"$TMP/out.S1b" 2>/dev/null &
+PIDS+=($!); sleep 2
+check "$(wc -l < "$TMP/out.S1b" | tr -d ' ')" "0" "per-session marker keeps that session's monitor from starting"
+
+# without any session env, target the last session that stamped activity
+printf '%s' S1 > "$TMP/last_session"
+status_out="$(CLAUDE_SESSION_ID= CLAUDE_CODE_SESSION_ID= bash "$CTL" status 2>/dev/null || true)"
+case "$status_out" in *"this session: S1"*) got=0 ;; *) got=1 ;; esac
+check "$got" "0" "status resolves the session from last_session when no env is set"
+CLAUDE_SESSION_ID= CLAUDE_CODE_SESSION_ID= bash "$CTL" off >/dev/null
+check "$( [ -f "$TMP/disabled.S1" ] && echo yes || echo no )" "yes" "off falls back to last_session"
+
+# `on` is session-scoped; `on-all` clears everything
+printf 'x' > "$TMP/disabled"
+printf 'x' > "$TMP/disabled.OTHER"
+CLAUDE_SESSION_ID=S1 bash "$CTL" on >/dev/null
+check "$( [ -f "$TMP/disabled.S1" ] && echo yes || echo no )" "no" "on clears this session's marker"
+check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "yes" "on leaves the global marker alone"
+bash "$CTL" on-all >/dev/null
+check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "no" "on-all clears the global marker"
+check "$( [ -f "$TMP/disabled.OTHER" ] && echo yes || echo no )" "no" "on-all clears other sessions' markers"
 
 printf '\npassed: %d   failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

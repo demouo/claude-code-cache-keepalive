@@ -3,6 +3,26 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.7.0] — session-scoped opt-out
+
+### Changed
+- `on` / `off` are now **session-scoped** by default: `/cache-keepalive:off`
+  stops only the current session's monitor and writes
+  `disabled.<session>`, leaving other open sessions and every future session
+  alone. `/cache-keepalive:on` clears it.
+- The previous global behaviour moved to new `/cache-keepalive:on-all` /
+  `/cache-keepalive:off-all` skills and `cache-keepalive-ctl.sh on-all |
+  off-all`. `off-all` writes the global `disabled` marker; `on-all` clears the
+  global marker and every per-session marker.
+- `cache-keepalive-ctl.sh status` now always prints `this session` and
+  `session off`, plus the session's monitor pid when one is running.
+
+### Added
+- The ctl/status scripts resolve "this session" from `CLAUDE_SESSION_ID`, then
+  `CLAUDE_CODE_SESSION_ID`, then `~/.claude/cache-keepalive/last_session`
+  (written by the stamp hook), so a session-scoped command targets the right
+  session even when the Bash tool does not inherit the session env.
+
 ## [2.6.0] — explicit on/off control
 
 ### Added

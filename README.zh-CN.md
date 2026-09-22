@@ -4,7 +4,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 36 passing" src="https://img.shields.io/badge/tests-36%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 48 passing" src="https://img.shields.io/badge/tests-48%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="requires Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 <a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
@@ -153,15 +153,23 @@ Monitor 会随会话自动启动，但你可以让它不启动、也可以随时
 | 想要 | 怎么做 |
 | --- | --- |
 | 立刻停掉 | 在 Claude Code 的任务列表里按 `x` 删除，或 `/cache-keepalive:off` |
-| 关掉并且保持关闭 | `/cache-keepalive:off`（会写一个全局标记） |
+| **只关掉当前会话**（默认） | `/cache-keepalive:off`（写 per-session 标记，其他会话和以后的新会话都不受影响） |
+| **全部关掉**，并且保持关闭 | `/cache-keepalive:off-all`（会写一个全局标记） |
 | 这个项目不要启动 | `touch <项目>/.claude/cache-keepalive-off` |
 | 哪儿都不要启动 | 在 `~/.claude/cache-keepalive/config` 里写 `CCKA_ENABLED=0` |
-| 重新打开 | `/cache-keepalive:on`，然后 `/reload-plugins` |
+| **只重新打开当前会话** | `/cache-keepalive:on`，然后 `/reload-plugins` |
+| **全部重新打开** | `/cache-keepalive:on-all`，然后 `/reload-plugins` |
 | 看现在在不在跑 | `/cache-keepalive:status` |
 
-`/cache-keepalive:off` 会停掉正在跑的 monitor，并写入
+`/cache-keepalive:off` 是**会话级**的：它只停掉**你当前所在会话**的那个 monitor，
+并写入 `~/.claude/cache-keepalive/disabled.<会话 id>`。于是这个会话 id 之后不会
+再自动启动 monitor，而其他开着的会话、以及以后新开的会话都照常工作——适合
+“只想让当前这段对话别再 ping”的情况。`/cache-keepalive:on` 可以解除。
+
+`/cache-keepalive:off-all` 是**全局**开关：停掉所有 monitor，并写入
 `~/.claude/cache-keepalive/disabled`。monitor 在**每次启动**时都会先看这个标记，
 所以之后再 `/reload-plugins`、或者开新会话，都**不会偷偷把它带回来**。
+`/cache-keepalive:on-all` 会同时清掉全局标记和所有 per-session 标记。
 
 手动按 `x` 删掉也没问题——状态是一致的：残留的 pid 文件会被清理，而且复用的 PID
 绝不会被误杀。
@@ -169,7 +177,7 @@ Monitor 会随会话自动启动，但你可以让它不启动、也可以随时
 同样的开关也提供成了普通脚本：
 
 ```bash
-bash plugins/cache-keepalive/scripts/cache-keepalive-ctl.sh status|on|off
+bash plugins/cache-keepalive/scripts/cache-keepalive-ctl.sh status|on|off|on-all|off-all
 ```
 
 ## 卸载

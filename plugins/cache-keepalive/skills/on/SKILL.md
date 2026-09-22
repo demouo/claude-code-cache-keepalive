@@ -1,9 +1,9 @@
 ---
 name: on
-description: Re-enable cache-keepalive after it was turned off. Use when the user wants the prompt-cache keepalive monitor back.
+description: Re-enable cache-keepalive for THIS session after it was turned off (the default). Use when the user wants the prompt-cache keepalive monitor back for the current session. For all sessions use on-all.
 ---
 
-Re-enable the keepalive, then report the result to the user.
+Re-enable the keepalive for the current session, then report the result.
 
 Run:
 
@@ -13,12 +13,19 @@ if [ -n "$CTL" ]; then
   bash "$CTL" on
 else
   STATE="${CCKA_STATE_DIR:-$HOME/.claude/cache-keepalive}"
-  rm -f "$STATE/disabled" "$STATE"/disabled.* 2>/dev/null
-  echo "cache-keepalive: ON (disable markers cleared)"
-  echo "no monitor running yet. Re-arm with /reload-plugins, or the Monitor tool:"
-  echo "  Monitor(command=\"bash <plugin>/scripts/cache-keepalive-monitor.sh\", persistent=true)"
+  key="${CLAUDE_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-}}"
+  [ -n "$key" ] || key="$(cat "$STATE/last_session" 2>/dev/null || true)"
+  safe="$(printf '%s' "$key" | tr -c 'A-Za-z0-9._-' '_')"; [ -n "$safe" ] || safe="default"
+  rm -f "$STATE/disabled.$safe" 2>/dev/null
+  echo "cache-keepalive: ON for this session (session=$safe)"
 fi
 ```
 
-If no monitor is running, tell the user to run `/reload-plugins` (the plugin monitor
-restarts automatically) or to start it with the Monitor tool as printed above.
+If the global marker is still set (a previous `/cache-keepalive:off-all`), say
+that no monitor can auto-start until `/cache-keepalive:on-all` is run. If no
+monitor is running, tell the user to run `/reload-plugins` (the plugin monitor
+restarts automatically) or to start it with the Monitor tool:
+
+```
+Monitor(command="bash <plugin>/scripts/cache-keepalive-monitor.sh", persistent=true)
+```

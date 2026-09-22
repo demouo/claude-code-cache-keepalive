@@ -1,9 +1,11 @@
 ---
 name: off
-description: Stop cache-keepalive and keep it off. Use when the user wants to disable, close, or stop the prompt-cache keepalive monitor, or says this task does not need it.
+description: Turn cache-keepalive off for THIS session only (the default), leaving other open sessions and all future sessions running. Use when the user wants to disable, close, or stop the prompt-cache keepalive monitor for the current session/task.
 ---
 
-Turn the keepalive off for good, then report the result to the user.
+Turn the keepalive off for the current session only, then report the result.
+For a blanket opt-out across every session, use `/cache-keepalive:off-all`
+instead.
 
 Run:
 
@@ -13,11 +15,25 @@ if [ -n "$CTL" ]; then
   bash "$CTL" off
 else
   STATE="${CCKA_STATE_DIR:-$HOME/.claude/cache-keepalive}"; mkdir -p "$STATE"
-  : > "$STATE/disabled"
-  for p in $(pgrep -f 'cache-keepalive-monitor\.sh' 2>/dev/null); do kill "$p" 2>/dev/null; done
-  rm -f "$STATE"/monitor.*.pid 2>/dev/null
-  echo "cache-keepalive: OFF (global marker written, monitors stopped)"
+  key="${CLAUDE_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-}}"
+  [ -n "$key" ] || key="$(cat "$STATE/last_session" 2>/dev/null || true)"
+  safe="$(printf '%s' "$key" | tr -c 'A-Za-z0-9._-' '_')"; [ -n "$safe" ] || safe="default"
+  : > "$STATE/disabled.$safe"
+  pf="$STATE/monitor.$safe.pid"
+  if [ -f "$pf" ]; then
+    pid="$(cat "$pf" 2>/dev/null || true)"
+    case "$pid" in ''|*[!0-9]*) : ;; *)
+      case "$(ps -p "$pid" -o command= 2>/dev/null || true)" in
+        *cache-keepalive-monitor*) kill "$pid" 2>/dev/null || true ;;
+      esac ;;
+    esac
+    rm -f "$pf"
+  fi
+  echo "cache-keepalive: OFF for this session only (session=$safe)"
 fi
 ```
 
-Then say briefly that the monitor is stopped and will not auto-start until `/cache-keepalive:on`.
+Then say briefly that **this** session's monitor is stopped and this session id
+will not auto-start it again, while other/new sessions are unaffected.
+`/cache-keepalive:on` re-arms this session; `/cache-keepalive:off-all` disables
+every session.

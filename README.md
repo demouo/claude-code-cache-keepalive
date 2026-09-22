@@ -4,7 +4,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 36 passing" src="https://img.shields.io/badge/tests-36%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 48 passing" src="https://img.shields.io/badge/tests-48%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="Requires the Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 <a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
@@ -262,22 +262,34 @@ The monitor auto-starts with the session, but it does not have to:
 | Want | Do |
 | --- | --- |
 | Stop it right now | delete it in Claude Code's task list (`x`), or `/cache-keepalive:off` |
-| Stop it and keep it off | `/cache-keepalive:off` (writes a global marker) |
+| Stop it for **this session only** (default) | `/cache-keepalive:off` (per-session marker; other and new sessions unaffected) |
+| Stop it **everywhere**, for good | `/cache-keepalive:off-all` (global marker) |
 | Don't start it in this project | `touch <project>/.claude/cache-keepalive-off` |
 | Don't start it anywhere | `CCKA_ENABLED=0` in `~/.claude/cache-keepalive/config` |
-| Turn it back on | `/cache-keepalive:on`, then `/reload-plugins` |
+| Turn **this session** back on | `/cache-keepalive:on`, then `/reload-plugins` |
+| Turn **everything** back on | `/cache-keepalive:on-all`, then `/reload-plugins` |
 | See what's running | `/cache-keepalive:status` |
 
-`/cache-keepalive:off` stops the running monitor and writes
-`~/.claude/cache-keepalive/disabled`. The monitor checks that marker on **every**
-start, so a later `/reload-plugins` or a brand new session will *not* silently
-bring it back. Deleting the task by hand is fine too — state stays consistent
-(stale pid files are cleaned up, and a reused pid is never killed by mistake).
+`/cache-keepalive:off` is session-scoped: it stops only the monitor belonging
+to the session you are in and writes
+`~/.claude/cache-keepalive/disabled.<session>`. That session id then skips
+auto-start, while every other open session and every future session keeps
+working normally — useful when you just want the current conversation to stop
+pinging. `/cache-keepalive:on` clears it.
+
+`/cache-keepalive:off-all` is the blanket switch: it stops every monitor and
+writes `~/.claude/cache-keepalive/disabled`. The monitor checks that global
+marker on **every** start, so a later `/reload-plugins` or a brand new session
+will *not* silently bring it back. `/cache-keepalive:on-all` clears the global
+marker and every per-session marker.
+
+Deleting the task by hand is fine too — state stays consistent (stale pid files
+are cleaned up, and a reused pid is never killed by mistake).
 
 The same control is available as a plain script, if you prefer:
 
 ```bash
-bash plugins/cache-keepalive/scripts/cache-keepalive-ctl.sh status|on|off
+bash plugins/cache-keepalive/scripts/cache-keepalive-ctl.sh status|on|off|on-all|off-all
 ```
 
 ## Uninstall
@@ -334,13 +346,13 @@ claude plugin uninstall cache-keepalive
 │   ├── .claude-plugin/plugin.json                        # plugin manifest
 │   ├── hooks/hooks.json                                  # Stop + UserPromptSubmit -> stamp, SessionEnd -> cleanup
 │   ├── monitors/monitors.json                            # auto-start idle monitor
-│   ├── skills/{on,off,status}/SKILL.md                   # /cache-keepalive:on|off|status
+│   ├── skills/{on,off,on-all,off-all,status}/SKILL.md   # /cache-keepalive:*
 │   └── scripts/
 │       ├── cache-keepalive-stamp.sh                      # record last_stop
 │       ├── cache-keepalive-monitor.sh                    # idle timer -> ping
 │       ├── cache-keepalive-cleanup.sh                    # SessionEnd: stop the monitor
 │       ├── cache-keepalive-housekeep.sh                  # archive stale state
-│       └── cache-keepalive-ctl.sh                        # status | on | off
+│       └── cache-keepalive-ctl.sh                        # status | on | off | on-all | off-all
 ├── install.sh / uninstall.sh / test.sh
 └── README.md
 ```
