@@ -42,7 +42,30 @@ safe="$(printf '%s' "$key" | tr -c 'A-Za-z0-9._-' '_')"
 SESSION_OFF="$STATE_DIR/disabled.$safe"
 SESSION_PIDFILE="$STATE_DIR/monitor.$safe.pid"
 
-monitor_pids() { pgrep -f 'cache-keepalive-monitor\.sh' 2>/dev/null || true; }
+# Only real monitor processes: match on argv precisely. `pgrep -f` matches the
+# whole command line, so an editor or a shell whose command merely *mentions*
+# the script name would be matched too -- and off-all kills whatever this
+# returns.
+monitor_pids() {
+  local p arg found
+  if [ -d /proc ]; then
+    for p in /proc/[0-9]*; do
+      [ -r "$p/cmdline" ] || continue
+      found=0
+      while IFS= read -r arg; do
+        case "$arg" in
+          */cache-keepalive-monitor.sh|cache-keepalive-monitor.sh) found=1; break ;;
+        esac
+      done < <(tr '\0' '\n' < "$p/cmdline" 2>/dev/null)
+      [ "$found" = 1 ] && basename "$p"
+    done
+  else
+    # no /proc (BSD/macOS): a shell whose *argument* is the script
+    ps -ax -o pid= -o command= 2>/dev/null \
+      | grep -E '(^|/)(bash|sh|dash|zsh)[ ]+[^ ]*cache-keepalive-monitor\.sh([ ]|$)' \
+      | awk '{print $1}'
+  fi
+}
 
 # Kill only the process named by a pid file, and only if it really is our
 # monitor (a reused pid must never be killed).

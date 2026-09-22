@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.7.2] — find monitor processes by argv, not by substring
+
+### Fixed
+- `cache-keepalive-ctl.sh` located running monitors with `pgrep -f
+  cache-keepalive-monitor.sh`, which matches the whole command line. Any
+  unrelated process that merely *mentions* the script name (an editor open on
+  it, a shell running a command containing the path) was matched: `status`
+  showed false positives and `off-all` would **kill** them. It now matches
+  argv precisely (a shell whose argument is the script; `/proc` on Linux, a
+  `ps` pattern elsewhere). Tests add a decoy that mentions the name.
+
 ## [2.7.1] — pass the session id to the monitor explicitly
 
 ### Fixed

@@ -169,9 +169,17 @@ sleep 3
 check "$( [ "$(wc -l < "$TMP/out.S9" | tr -d ' ')" -ge 1 ] && echo yes || echo no )" "yes" "--session pings from its own heartbeat"
 
 echo "-- ctl off-all/on-all (every session) --"
+# a decoy whose command line merely mentions the script name
+bash -c 'sleep 30 # cache-keepalive-monitor.sh' &
+DECOY=$!; PIDS+=("$DECOY")
 CLAUDE_SESSION_ID=H CCKA_IDLE_SECONDS=300 CCKA_TICK_SECONDS=300 bash "$MONITOR" >"$TMP/out.H" 2>/dev/null &
 HPID=$!; PIDS+=("$HPID"); sleep 1
 check "$( [ -f "$TMP/monitor.H.pid" ] && echo yes || echo no )" "yes" "monitor H is running"
+case "$(bash "$CTL" status 2>/dev/null)" in
+  *"$DECOY "*|*"$DECOY)"*) decoy_listed=yes ;;
+  *) decoy_listed=no ;;
+esac
+check "$decoy_listed" "no" "status does not list a decoy that merely mentions the script name"
 CLAUDE_SESSION_ID=H bash "$CTL" off-all >/dev/null
 hgone=no
 for _ in 1 2 3 4 5 6 7 8 9 10; do
@@ -180,6 +188,8 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
   sleep 0.2
 done
 check "$hgone" "yes" "ctl off-all stops the monitor"
+check "$(kill -0 "$DECOY" 2>/dev/null && echo alive || echo dead)" "alive" "off-all does not kill an unrelated process"
+kill "$DECOY" 2>/dev/null || true
 check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "yes" "ctl off-all writes the global marker"
 CLAUDE_SESSION_ID=H bash "$CTL" on-all >/dev/null
 check "$( [ -f "$TMP/disabled" ] && echo yes || echo no )" "no" "ctl on-all clears the global marker"
