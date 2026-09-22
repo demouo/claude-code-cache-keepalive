@@ -259,5 +259,14 @@ done
 check "$missing" "" "every skill sets disable-model-invocation: true"
 check "$(ls -1 "$HERE"/plugins/cache-keepalive/skills | sort | tr '\n' ' ')" "off status " "only the manual off/status controls ship"
 
+echo "-- ctl messages never point at removed slash commands --"
+TMP2="$TMP/ctlmessages"; mkdir -p "$TMP2"
+ctlout=""
+for c in status on off on-all off-all; do
+  ctlout="$ctlout$(CCKA_STATE_DIR="$TMP2" CLAUDE_SESSION_ID=Q bash "$CTL" "$c" 2>&1)"
+done
+case "$ctlout" in *"/cache-keepalive:"*) stale=yes ;; *) stale=no ;; esac
+check "$stale" "no" "ctl output never advertises a removed /cache-keepalive: command"
+
 printf '\npassed: %d   failed: %d\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

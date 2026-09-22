@@ -1,6 +1,5 @@
 *.log
 *.count
 .DS_Store
-settings.json.bak.*
 __pycache__/
 *.pyc

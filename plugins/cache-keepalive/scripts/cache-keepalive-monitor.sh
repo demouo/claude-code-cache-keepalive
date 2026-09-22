@@ -12,7 +12,7 @@
 # It starts only when the user wants it:
 #   * CCKA_ENABLED=0                            -> never
 #   * ~/.claude/cache-keepalive/disabled.<sid>  -> not for this session
-#     (created by /cache-keepalive:off, removed by :on)
+#     (created by /cache-keepalive:off, cleared with the ctl script's `on`)
 #   * <project>/.claude/cache-keepalive-off     -> not for this project
 # and it stops pinging once the session has been idle for
 # CCKA_MAX_IDLE_SECONDS (default 12h); real activity resets that.
@@ -85,11 +85,12 @@ case "$(printf '%s' "${CCKA_ENABLED:-1}" | tr '[:upper:]' '[:lower:]')" in
   0|false|no|off) log "CCKA_ENABLED=off; not starting"; exit 0 ;;
 esac
 
-# opt-out markers (created by /cache-keepalive:off, removed by :on). The global
+# opt-out markers (created by /cache-keepalive:off, cleared with the ctl
+# script's `on`). The global
 # one disables every session; the per-session one only this session. Checked on
 # every start, so turning it off also survives a plugin reload.
 if [ -f "$STATE_DIR/disabled" ] || [ -f "$DISABLED" ]; then
-  log "disabled marker present; not starting (use /cache-keepalive:on to re-arm)"
+  log "disabled marker present; not starting (run the ctl script with 'on' to re-arm)"
   exit 0
 fi
 

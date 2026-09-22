@@ -1,6 +1,6 @@
 {
   "name": "cache-keepalive",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Keep Claude Code's prompt cache warm across idle pauses. A Stop/UserPromptSubmit hook stamps activity; a background Monitor pings the session only once it has been idle long enough (default 50 min), which triggers a cache read and refreshes the prompt-cache TTL. Built for a 1h cache TTL; on request-quota subscriptions every ping eats quota, so disable it there.",
   "author": {
     "name": "demouo"

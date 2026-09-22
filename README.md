@@ -4,7 +4,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 59 passing" src="https://img.shields.io/badge/tests-59%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 60 passing" src="https://img.shields.io/badge/tests-60%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="Requires the Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 <a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
@@ -170,8 +170,6 @@ break-even math: [docs/COST.md](docs/COST.md).
 
 ## Install
 
-### Recommended — as a plugin (auto-starts the Monitor)
-
 ```
 /plugin marketplace add demouo/claude-code-cache-keepalive
 /plugin install cache-keepalive@claude-cache-tools
@@ -188,21 +186,6 @@ claude plugin list
 
 The plugin ships a `monitors/monitors.json` with `"when": "always"`, so the
 idle monitor starts automatically with the session.
-
-### Alternative — plain `settings.json`
-
-```bash
-git clone https://github.com/demouo/claude-code-cache-keepalive.git
-cd claude-code-cache-keepalive
-./test.sh          # optional self-test
-./install.sh       # copies scripts, wires Stop + UserPromptSubmit -> stamp
-```
-
-This route **cannot auto-start the Monitor**. Start it once per session:
-
-```
-Monitor(command="bash ~/.claude/hooks/cache-keepalive-monitor.sh", persistent=true)
-```
 
 ---
 
@@ -311,12 +294,8 @@ bash plugins/cache-keepalive/scripts/cache-keepalive-ctl.sh status|on|off|on-all
 ## Uninstall
 
 ```bash
-# plugin route
-claude plugin uninstall cache-keepalive
-
-# settings route
-./uninstall.sh            # remove hooks + scripts, keep state/logs
-./uninstall.sh --purge    # also delete ~/.claude/cache-keepalive
+claude plugin uninstall cache-keepalive   # hooks, monitor and skills go with it
+rm -rf ~/.claude/cache-keepalive          # optional: also drop state + logs
 ```
 
 ---
@@ -375,7 +354,7 @@ claude plugin uninstall cache-keepalive
 │       ├── cache-keepalive-cleanup.sh                    # SessionEnd: stop the monitor
 │       ├── cache-keepalive-housekeep.sh                  # archive stale state
 │       └── cache-keepalive-ctl.sh                        # status | on | off | on-all | off-all
-├── install.sh / uninstall.sh / test.sh
+├── test.sh
 └── README.md
 ```
 

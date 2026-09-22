@@ -4,7 +4,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 59 passing" src="https://img.shields.io/badge/tests-59%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 60 passing" src="https://img.shields.io/badge/tests-60%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="requires Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 <a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
@@ -87,7 +87,7 @@ OpenRouter、自建代理、各类 Anthropic 兼容网关都可以——**只要
 
 ## 安装
 
-**方式一（推荐）：装成插件，Monitor 自动启动**
+**装成插件，Monitor 自动启动**
 
 ```
 /plugin marketplace add demouo/claude-code-cache-keepalive
@@ -103,21 +103,6 @@ claude plugin install cache-keepalive@claude-cache-tools
 ```
 
 插件自带 `monitors/monitors.json`（`"when": "always"`），会话一开 Monitor 就会自己起来。
-
-**方式二：直接改 `settings.json`**
-
-```bash
-git clone https://github.com/demouo/claude-code-cache-keepalive.git
-cd claude-code-cache-keepalive
-./test.sh          # 可选自检
-./install.sh       # 写入 hooks
-```
-
-这条路**不会自动启动 Monitor**，每个会话都得手动起一次：
-
-```
-Monitor(command="bash ~/.claude/hooks/cache-keepalive-monitor.sh", persistent=true)
-```
 
 ## 配置
 
@@ -192,9 +177,8 @@ bash plugins/cache-keepalive/scripts/cache-keepalive-ctl.sh status|on|off|on-all
 ## 卸载
 
 ```bash
-claude plugin uninstall cache-keepalive
-# 或者（settings 方式）
-./uninstall.sh --purge
+claude plugin uninstall cache-keepalive   # hooks、monitor、skills 一并移除
+rm -rf ~/.claude/cache-keepalive          # 可选：连状态和日志一起删
 ```
 
 ## 注意事项

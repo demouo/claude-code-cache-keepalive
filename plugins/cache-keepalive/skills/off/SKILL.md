@@ -14,5 +14,6 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/cache-keepalive-ctl.sh" off
 
 Then say briefly that **this** session's monitor is stopped and this session id
 will not auto-start it again, while other and new sessions are unaffected. To
-re-arm, run the same script with `on`. For a global opt-out use `off-all`; for
-a per-project opt-out create `<project>/.claude/cache-keepalive-off`.
+re-arm, run the same script with `on`; it also takes `off-all` (every session)
+and `on-all`. For a per-project opt-out create
+`<project>/.claude/cache-keepalive-off`.

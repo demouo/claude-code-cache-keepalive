@@ -3,6 +3,29 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [3.0.1] — drop leftover references to removed skills
+
+### Fixed
+- `cache-keepalive-ctl.sh` printed re-arm hints for the removed
+  `/cache-keepalive:on` and `/cache-keepalive:on-all` commands. It now says to
+  run the script itself with `on` / `on-all`, and the Monitor-tool hint uses
+  the script's real path instead of a `<plugin>` placeholder.
+- `cache-keepalive-monitor.sh` comments and the disabled-marker log line no
+  longer mention `:on`.
+
+### Removed
+- The plain-`settings.json` install route: `install.sh`, `uninstall.sh`, the
+  `.gitignore` backup pattern, and the README section describing it. It predated
+  the plugin, shipped only part of the runtime (no ctl/housekeeping/SessionEnd
+  cleanup), and could not auto-start the monitor. Install through the plugin
+  marketplace instead.
+- Undocumented `cache-keepalive-ctl.sh` aliases (`on-here`, `off-this`,
+  `on-everywhere`, …); only `status|on|off|on-all|off-all` remain.
+
+### Tests
+- A regression test asserts no ctl subcommand's output advertises a removed
+  `/cache-keepalive:` command. Tests 59 -> 60.
+
 ## [3.0.0] — trim the command surface to manual off/status
 
 ### Changed (breaking)

@@ -28,6 +28,7 @@ set -uo pipefail
 
 STATE_DIR="${CCKA_STATE_DIR:-$HOME/.claude/cache-keepalive}"
 GLOBAL_OFF="$STATE_DIR/disabled"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Which session are we acting on? Prefer the live env, then the last session
 # that stamped activity (so a skill run from the Bash tool, which may not
@@ -92,7 +93,7 @@ stop_pidfile() {
 
 arm_hint() {
   echo "  /reload-plugins   (the plugin monitor restarts automatically)"
-  echo "  or the Monitor tool: Monitor(command=\"bash <plugin>/scripts/cache-keepalive-monitor.sh\", persistent=true)"
+  echo "  or the Monitor tool: Monitor(command=\"bash $HERE/cache-keepalive-monitor.sh\", persistent=true)"
 }
 
 case "${1:-status}" in
@@ -100,7 +101,7 @@ case "${1:-status}" in
     echo "state dir   : $STATE_DIR"
     echo "this session: $safe"
     if [ -f "$GLOBAL_OFF" ]; then
-      echo "global off  : yes  ($GLOBAL_OFF present -> /cache-keepalive:on-all to re-arm)"
+      echo "global off  : yes  ($GLOBAL_OFF present -> run this script with 'on-all' to re-arm)"
     else
       echo "global off  : no"
     fi
@@ -134,12 +135,12 @@ case "${1:-status}" in
     fi
     ;;
 
-  on|on-session|on-here|on-this)
+  on)
     rm -f "$SESSION_OFF"
     echo "cache-keepalive: ON for this session (session=$safe)"
     if [ -f "$GLOBAL_OFF" ]; then
       echo "note: a GLOBAL disable marker is still present, so no monitor will"
-      echo "      auto-start yet. Clear it with /cache-keepalive:on-all."
+      echo "      auto-start yet. Clear it by running this script with 'on-all'."
     elif [ -f "$SESSION_PIDFILE" ]; then
       echo "a monitor is already running (pid $(cat "$SESSION_PIDFILE" 2>/dev/null || echo '?'))"
     else
@@ -148,16 +149,16 @@ case "${1:-status}" in
     fi
     ;;
 
-  off|off-session|off-here|off-this)
+  off)
     mkdir -p "$STATE_DIR" 2>/dev/null || true
     : > "$SESSION_OFF"
     stop_pidfile "$SESSION_PIDFILE"
     echo "cache-keepalive: OFF for this session only (session=$safe)"
     echo "other running sessions are untouched; only this session id will skip"
-    echo "auto-start. Re-arm with /cache-keepalive:on (then /reload-plugins)."
+    echo "auto-start. Re-arm by running this script with 'on' (then /reload-plugins)."
     ;;
 
-  on-all|on-everywhere|on-everything)
+  on-all)
     rm -f "$GLOBAL_OFF" "$SESSION_OFF"
     rm -f "$STATE_DIR"/disabled.* 2>/dev/null || true
     echo "cache-keepalive: ON for ALL sessions (global + per-session markers cleared)"
@@ -169,7 +170,7 @@ case "${1:-status}" in
     fi
     ;;
 
-  off-all|off-everywhere|off-everything)
+  off-all)
     mkdir -p "$STATE_DIR" 2>/dev/null || true
     : > "$GLOBAL_OFF"
     for pid in $(monitor_pids); do
@@ -184,7 +185,7 @@ case "${1:-status}" in
     done
     rm -f "$STATE_DIR"/monitor.*.pid 2>/dev/null || true
     echo "cache-keepalive: OFF for ALL sessions (global marker written, monitors stopped)"
-    echo "it will not auto-start again until /cache-keepalive:on-all"
+    echo "it will not auto-start again until you run this script with 'on-all'"
     ;;
 
   *)
