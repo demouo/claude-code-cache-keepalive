@@ -7,6 +7,7 @@
 <a href="test.sh"><img alt="tests: 29 passing" src="https://img.shields.io/badge/tests-29%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="requires Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
+<a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
 </p>
 
 **给 Claude Code 的 prompt cache 保温，又不至于卡住你的终端。**
@@ -176,6 +177,10 @@ claude plugin uninstall cache-keepalive
   终端、受 8 次 block 限制，一次最多只覆盖约 30 分钟。
 - Aider 的 `--cache-keepalive-pings`、Cache-Refresh-SillyTavern、cline/cline#414
   —— 同一个"读缓存就会续 TTL"的思路，出现在别的工具里。
+
+## 友链
+
+* [LINUX DO](https://linux.do) —— 一个开放、友善的中文技术社区。
 
 ## License
 

@@ -7,6 +7,7 @@
 <a href="test.sh"><img alt="tests: 29 passing" src="https://img.shields.io/badge/tests-29%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="Requires the Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
+<a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
 </p>
 
 **Keep Claude Code's prompt cache warm across idle pauses — without freezing your terminal.**
@@ -328,6 +329,10 @@ claude plugin uninstall cache-keepalive
 * **Aider `--cache-keepalive-pings`**, **Cache-Refresh-SillyTavern**, and
   **cline/cline#414** — the same "a cache read refreshes the TTL" trick, in
   other tools.
+
+## Friends
+
+* [LINUX DO](https://linux.do) — an open, friendly Chinese-language tech community.
 
 ## License
 
