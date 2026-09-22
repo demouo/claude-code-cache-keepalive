@@ -68,6 +68,20 @@ sleep 3
 check "$( [ "$(lines "$TMP/out.global")" -ge 1 ] && echo yes || echo no )" "yes" "keyless monitor uses the shared global heartbeat"
 check "$( [ -f "$TMP/cache-keepalive.log" ] && echo yes || echo no )" "yes" "keyless monitor logs to the shared log"
 
+echo "-- default ping text: bland, short, one-word reply --"
+: > "$TMP/out.def"
+printf '%s' "$(date +%s)" > "$TMP/last_stop.DEF"
+CLAUDE_SESSION_ID=DEF CCKA_IDLE_SECONDS=1 CCKA_TICK_SECONDS=1 bash "$MONITOR" >"$TMP/out.def" 2>/dev/null &
+PIDS+=($!)
+sleep 3
+first="$(head -n1 "$TMP/out.def")"
+check "$( [ -n "$first" ] && echo yes || echo no )" "yes" "default ping text fires with no CCKA_PING_TEXT"
+case "$first" in *cache*|*Cache*|*keepalive*) leaked=yes ;; *) leaked=no ;; esac
+check "$leaked" "no" "default ping text does not name the cache-keepalive mechanism"
+check "$( [ "${#first}" -le 60 ] && echo yes || echo no )" "yes" "default ping text stays short (${#first} chars)"
+case "$first" in *ok*) asks_ok=yes ;; *) asks_ok=no ;; esac
+check "$asks_ok" "yes" "default ping text pins the answer to one-word \"ok\""
+
 echo "-- disabled --"
 CCKA_ENABLED=0 CCKA_IDLE_SECONDS=1 CCKA_TICK_SECONDS=1 bash "$MONITOR" >"$TMP/off" 2>/dev/null &
 PIDS+=($!)

@@ -4,7 +4,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 53 passing" src="https://img.shields.io/badge/tests-53%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 57 passing" src="https://img.shields.io/badge/tests-57%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="requires Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 <a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
@@ -128,7 +128,7 @@ Monitor 的读取顺序是：**环境变量 → `~/.claude/cache-keepalive/confi
 | `CCKA_IDLE_SECONDS` | `3000` | 空闲多久才 ping（50 分钟） |
 | `CCKA_TICK_SECONDS` | `300` | 检查间隔（5 分钟） |
 | `CCKA_MAX_IDLE_SECONDS` | `43200` | 空闲超过这么久就停止 ping（12 小时；`0` = 不限） |
-| `CCKA_PING_TEXT` | 一句无害的话 | 注入给 Claude 的内容 |
+| `CCKA_PING_TEXT` | `Reply with "ok" and nothing else.` | 注入给 Claude 的内容 |
 | `CCKA_ENABLED` | `1` | 设成 `0`/`false`/`no`/`off` 可关闭 |
 | `CCKA_RETENTION_DAYS` | `7` | 多久之前的会话状态会被归档 |
 | `CCKA_ARCHIVE_KEEP_DAYS` | `0` | 归档保留多久（`0` = 永久） |
@@ -200,6 +200,8 @@ claude plugin uninstall cache-keepalive
 2. **订阅和 API 都适用**。订阅制下的价值不在省 token 账单，而在于避免"空闲超过
    1 小时后再把整段前缀重新算一遍"——那更慢，也更吃套餐额度；ping 本身只花一次缓存读。
 3. **每次 ping 都是一个真实回合**：会出现在对话记录里，消耗一次缓存读加一句回复。
+   `CCKA_PING_TEXT` 尽量保持无害；默认只要求回一个 `ok`，把这一回合对正常
+   对话的干扰降到最低。
 4. **退出时会弹确认框**："Background work is running … Exit anyway?"（上游 issue
    #58852，官方标记为 not planned，插件侧关不掉）。默认选项就是 *Exit anyway*，
    回车即可。

@@ -4,7 +4,7 @@
 
 <p>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-<a href="test.sh"><img alt="tests: 53 passing" src="https://img.shields.io/badge/tests-53%20passing-brightgreen"></a>
+<a href="test.sh"><img alt="tests: 57 passing" src="https://img.shields.io/badge/tests-57%20passing-brightgreen"></a>
 <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-6E56CF">
 <img alt="Requires the Monitor tool" src="https://img.shields.io/badge/requires-Monitor%20tool-orange">
 <a href="https://linux.do"><img alt="community: LINUX DO" src="https://img.shields.io/badge/community-LINUX%20DO-1f6feb"></a>
@@ -217,7 +217,7 @@ visible to monitors, so use the config file or environment.)
 | `CCKA_IDLE_SECONDS` | `3000` | Idle time before pinging (50 min) |
 | `CCKA_TICK_SECONDS` | `300` | Poll granularity (5 min) |
 | `CCKA_MAX_IDLE_SECONDS` | `43200` | Stop pinging once idle exceeds this (12 h; `0` = never) |
-| `CCKA_PING_TEXT` | bland text | The line delivered to Claude |
+| `CCKA_PING_TEXT` | `Reply with "ok" and nothing else.` | The line delivered to Claude |
 | `CCKA_STATE_DIR` | `~/.claude/cache-keepalive` | State + log directory |
 | `CCKA_LOG` | `$CCKA_STATE_DIR/cache-keepalive.<session>.log` | Explicit log path override |
 | `CCKA_ENABLED` | `1` | `0` / `false` / `no` / `off` disables the monitor |
@@ -332,7 +332,9 @@ claude plugin uninstall cache-keepalive
    case is a monitor that cannot see `CLAUDE_SESSION_ID`, which falls back
    to the global `last_stop`.
 4. **The ping is a real turn.** It appears in the transcript and costs one
-   cache read + a short reply. Keep `CCKA_PING_TEXT` bland.
+   cache read + a short reply. Keep `CCKA_PING_TEXT` bland; the default already
+   asks only for a one-word `ok`, so the added turn stays as small and as
+   unobtrusive as possible.
 5. **Experimental.** Plugin monitors are an experimental component and run
    unsandboxed at hook trust level.
 6. **Provider.** The keepalive runs on any provider whose Claude Code can

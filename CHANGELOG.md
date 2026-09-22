@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## [2.7.3] — bland default ping text
+
+### Changed
+- The default `CCKA_PING_TEXT` announced the mechanism ("cache keepalive:
+  this session has been idle; reply with a single word so the prompt cache
+  stays warm."), which landed in every transcript and read like a real user
+  message. It is now `Reply with "ok" and nothing else.` — it never names the
+  plugin and pins the answer to one short token, so the keepalive turn stays
+  as small and as unobtrusive as possible. Tests add coverage for the default
+  text (bland, short, asks for `ok`): 53 -> 57.
+
 ## [2.7.2] — find monitor processes by argv, not by substring
 
 ### Fixed

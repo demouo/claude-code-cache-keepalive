@@ -26,6 +26,8 @@
 #   CCKA_TICK_SECONDS       poll granularity           (default 300 = 5 min)
 #   CCKA_MAX_IDLE_SECONDS   stop pinging past this idle (default 43200 = 12h; 0 = never)
 #   CCKA_PING_TEXT          stdout line delivered to Claude
+#                           (default: asks for a one-word "ok" reply)
+#                           (default: a bland "reply with a single word")
 #   CCKA_STATE_DIR          state/log directory        (default ~/.claude/cache-keepalive)
 #   CCKA_LOG                explicit log path override
 #   CCKA_ENABLED            set 0/false/no/off to disable
@@ -100,7 +102,7 @@ fi
 IDLE="${CCKA_IDLE_SECONDS:-3000}"
 TICK="${CCKA_TICK_SECONDS:-300}"
 MAX_IDLE="${CCKA_MAX_IDLE_SECONDS:-43200}"
-MESSAGE="${CCKA_PING_TEXT:-cache keepalive: this session has been idle; reply with a single word so the prompt cache stays warm.}"
+MESSAGE="${CCKA_PING_TEXT:-Reply with \"ok\" and nothing else.}"
 
 case "$IDLE"     in ''|*[!0-9]*) IDLE=3000 ;; esac
 case "$TICK"     in ''|*[!0-9]*) TICK=300 ;; esac
